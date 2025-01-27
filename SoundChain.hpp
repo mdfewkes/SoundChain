@@ -392,5 +392,4 @@ private:
 			if (_writeIndex >= _bufferSize) _writeIndex -= _bufferSize;
 		}
 	}
-
 };

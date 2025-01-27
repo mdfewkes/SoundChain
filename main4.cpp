@@ -38,11 +38,17 @@ int main (int argc, char** argv) {
 
 	wavout.StartRecording();
 
+	auto lastSamples = platform.sampleElapsed();
+
 	trimParams.amplitude = 1.0f;
 	trim.SetParameters(trimParams);
 	while (platform.time() < 0.05) {
-		printf("%s: %ld\n", "Samples: ",  platform.sampleElapsed());
-		printf("%s: %f\n", "Seconds: ",  platform.time());
+		auto currentSamples = platform.sampleElapsed();
+		if (lastSamples != platform.sampleElapsed()) {
+			printf("%s: %d\n", "Samples: ", currentSamples);
+			printf("%s: %f\n", "Seconds: ", platform.time());
+			lastSamples = currentSamples;
+		}
 	};
 	trimParams.amplitude = 0.0f;
 	trim.SetParameters(trimParams);
@@ -74,9 +80,13 @@ int main (int argc, char** argv) {
 	while (platform.time() < 1.0) {};
 	trimParams.amplitude = 0.0f;
 	trim.SetParameters(trimParams);
-	while (platform.time() < 1.5) {
-		printf("%s: %ld\n", "Samples: ",  platform.sampleElapsed());
-		printf("%s: %f\n", "Seconds: ",  platform.time());
+	while (platform.time() <= 1.5) {
+		auto currentSamples = platform.sampleElapsed();
+		if (lastSamples != platform.sampleElapsed()) {
+			printf("%s: %d\n", "Samples: ", currentSamples);
+			printf("%s: %f\n", "Seconds: ", platform.time());
+			lastSamples = currentSamples;
+		}
 	};
 
 	wavout.StopRecording();

@@ -5,7 +5,7 @@
 class SoundChainPlatform {
 protected:
 	SoundChainSettings _settings;
-	unsigned long int _samplesElapsed;
+	unsigned int _samplesElapsed;
 
 	virtual void Setup() {};
 	virtual void Start() {};
@@ -44,7 +44,7 @@ public:
 	SoundChainBase* GetPrevious() {return _previous;}
 	void SetPrevious(SoundChainBase* previous) {_previous = previous;}
 
-	unsigned long int sampleElapsed() {return _samplesElapsed;}
+	unsigned int sampleElapsed() {return _samplesElapsed;}
 	double time() {return (double)_samplesElapsed / (double)_settings.SampleRate;}
 
 private:

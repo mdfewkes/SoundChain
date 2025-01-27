@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <cmath>
 
 namespace DEA {
@@ -780,57 +781,106 @@ namespace DEA {
 		DSP_LFO _lfo;
 	};
 
-	// template <typename T>
-	// class CircularBuffer {
-	// public:
-	// 	CircularBuffer() {
-	// 		_buffer.reset(new T[0]);
-	// 	}
-	// 	~CircularBuffer() {}
+	template <typename T>
+	class CircularBuffer {
+	public:
+		CircularBuffer() {
+			_buffer.reset(new T[0]);
+		}
+		~CircularBuffer() {}
 
-	// 	void CreateBuffer(unsigned int bufferLength) {
-	// 		_writeIndex = 0;
-	// 		_bufferLength = (unsigned int)(pow(2, ceil(log(bufferLength)/log(2))));
-	// 		_wrapMask = _bufferLength - 1;
-	// 		_buffer.reset(new T[_bufferLength]);
-	// 		FlushBuffer();
-	// 	}
+		unsigned int GetBufferLength() {return _bufferLength;}
 
-	// 	void FlushBuffer() {}
+		void CreateBuffer(unsigned int bufferLength) {
+			_writeIndex = 0;
+			_bufferLength = (unsigned int)(pow(2, ceil(log(bufferLength)/log(2))));
+			_wrapMask = _bufferLength - 1;
+			_buffer.reset(new T[_bufferLength]);
+			FlushBuffer();
+		}
 
-	// 	void WriteBuffer(T input) {
-	// 		_buffer[_writeIndex++] = input;
-	// 		_writeIndex &= _wrapMask;
-	// 	}
+		void FlushBuffer() {
+			for (int i = 0; i < _bufferLength; i++) {
+				_buffer[i] = 0;
+			}
+		}
 
-	// 	T ReadBuffer(int delayInSamples) {
-	// 		int readIndex = _writeIndex - delayInSamples;
-	// 		readIndex &= _wrapMask;
-	// 		return _buffer[_readIndex];
-	// 	}
+		void WriteBuffer(T input) {
+			_buffer[_writeIndex++] = input;
+			_writeIndex &= _wrapMask;
+		}
 
-	// 	T ReadBuffer(float delayInFractionalSamples, bool interpolate = true) {
-	// 		T start = ReadBuffer((int)delayInFractionalSamples);
-	// 		if (!interpolate) return start;
+		T ReadBuffer(int delayInSamples) {
+			int readIndex = _writeIndex - delayInSamples;
+			readIndex &= _wrapMask;
+			return _buffer[_writeIndex];
+		}
 
-	// 		T end = ReadBuffer((int)delayInFractionalSamples + 1);
-	// 		float t = delayInFractionalSamples - (int) delayInFractionalSamples;
+		T ReadBuffer(float delayInFractionalSamples, bool interpolate = true) {
+			T start = ReadBuffer((int)delayInFractionalSamples);
+			if (!interpolate) return start;
 
-	// 		return Lerp(start, end, t);
-	// 	}
+			T end = ReadBuffer((int)delayInFractionalSamples + 1);
+			float t = delayInFractionalSamples - (int) delayInFractionalSamples;
 
-	// private:
-	// 	std::unique_ptr<T[]> _buffer = nullptr;
-	// 	unsigned int _writeIndex;
-	// 	unsigned int _bufferLength;
-	// 	unsigned int _wrapMask;
+			return Lerp(start, end, t);
+		}
 
-	// 	T lerp (T start, T end, float t) {
-	// 		if (t >= 1.0f) return end;
+	private:
+		std::unique_ptr<T[]> _buffer = nullptr;
+		unsigned int _writeIndex;
+		unsigned int _bufferLength;
+		unsigned int _wrapMask;
 
-	// 		return t * end + (1.0f - t) * start;
-	// 	}
-	// };
+		T Lerp (T start, T end, float t) {
+			if (t >= 1.0f) return end;
 
+			return t * end + (1.0f - t) * start;
+		}
+	};
 
+	class DSP_Delay {
+	public:
+		struct Parameters {
+			float delayTime = 0.2f;
+			float dry = 1.0f;
+			float wet = 1.0f;
+			float feedback = 0.5f;
+		};
+
+		DSP_Delay() {}
+		DSP_Delay(Parameters &parameters) : _params(parameters ) {}
+		~DSP_Delay() {}
+
+		Parameters GetParameters() {return _params;}
+		void SetParameters(Parameters &parameters) {
+			_params = parameters;
+
+			_delayInSamples = _params.delayTime * _sampleRate;
+		}
+
+		void Reset(int sampleRate) {
+			_sampleRate = sampleRate;
+			_samplesPerMS = _sampleRate / 1000.0f;
+
+			_delayInSamples = _params.delayTime * _sampleRate;
+
+			_buffer.CreateBuffer(_sampleRate * 2);
+		}
+
+		float GetSample(float xn) {
+			float yn = _buffer.ReadBuffer(_delayInSamples);
+			float dn = xn + _params.feedback * yn;
+			_buffer.WriteBuffer(dn);
+
+			return _params.dry * xn + _params.wet * yn;
+		}
+
+	private:
+		Parameters _params;
+		CircularBuffer<float> _buffer;
+		int _sampleRate;
+		float _delayInSamples;
+		float _samplesPerMS;
+	};
 }
