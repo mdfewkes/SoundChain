@@ -2,6 +2,8 @@
 
 #include "SoundChain.hpp"
 
+// TODO: add buffering (double/triple or circular)
+
 class SoundChainPlatform {
 protected:
 	SoundChainSettings _settings;
@@ -28,6 +30,7 @@ public:
 
 		Start();
 
+		_samplesElapsed = 0.0f;
 		_initialized = true;
 	}
 
@@ -44,7 +47,7 @@ public:
 	SoundChainBase* GetPrevious() {return _previous;}
 	void SetPrevious(SoundChainBase* previous) {_previous = previous;}
 
-	unsigned int sampleElapsed() {return _samplesElapsed;}
+	unsigned int samplesElapsed() {return _samplesElapsed;}
 	double time() {return (double)_samplesElapsed / (double)_settings.SampleRate;}
 
 private:

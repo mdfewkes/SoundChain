@@ -4,11 +4,11 @@
 #include "SoundChain.hpp"
 #include "SoundChainWaveFile.hpp"
 #include "DAESoundChain.hpp"
-#include "PortAudioSCP.hpp"
+// #include "PortAudioSCP.hpp"
 #include "WaveOutSCP.hpp"
 
 #define SAMPLERATE 44100
-#define CHANNELCOUNT 2
+#define CHANNELCOUNT 1
 
 int main (int argc, char** argv) {
 
@@ -16,79 +16,56 @@ int main (int argc, char** argv) {
 	soundChainSettings.SampleRate = SAMPLERATE;
 	soundChainSettings.Channels = CHANNELCOUNT;
 
-	// WhiteNoiseSoundChain noise;
+	WhiteNoiseSoundChain noise;
 
 	WavReaderSoundChain wavin;
 	// wavin.SetPrevious(&noise);
 
 	TrimSoundChain trim;
 	auto trimParams = trim.GetParameters();
+	// trimParams.amplitude = 0.25f;
+	trim.SetParameters(trimParams);
 	trim.SetPrevious(&wavin);
 
-	DelaySoundChain delay;
-	delay.SetPrevious(&trim);
+	DEA::DSPSoundChain<DEA::DSP_AnalogFIRFilter> deaEffect1;
+	auto deaEffect1Parameters = deaEffect1.GetParameters();
+	deaEffect1.SetParameters(deaEffect1Parameters);
+	deaEffect1.SetPrevious(&trim);
 
-	WavWriterSoundChain wavout;
-	wavout.SetPrevious(&delay);
+	DEA::DSPSoundChain<DEA::DSP_3BandCompressor> deaEffect2;
+	auto deaEffect2Parameters = deaEffect2.GetParameters();
+	deaEffect2.SetParameters(deaEffect2Parameters);
+	deaEffect2.SetPrevious(&deaEffect1);
 
-	PortAudioSCP platform;
-	// WaveOutSCP platform;
-	platform.SetPrevious(&wavout);
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect3;
+	auto deaEffect3Parameters = deaEffect3.GetParameters();
+	deaEffect3.SetParameters(deaEffect3Parameters);
+	deaEffect3.SetPrevious(&deaEffect2);
+
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect4;
+	auto deaEffect4Parameters = deaEffect4.GetParameters();
+	deaEffect4.SetParameters(deaEffect4Parameters);
+	deaEffect4.SetPrevious(&deaEffect3);
+
+	// WavWriterSoundChain wavout;
+	// wavout.SetPrevious(&deaEffect4);
+
+	// PortAudioSCP platform;
+	WaveOutSCP platform;
+	platform.SetPrevious(&deaEffect4);
 	platform.Initialize(soundChainSettings);
 
-	wavout.StartRecording();
+	// wavout.StartRecording();
 
-	auto lastSamples = platform.sampleElapsed();
+	while (platform.time() <= 6) {
+		float delta = platform.time() / 6.0;
 
-	trimParams.amplitude = 1.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.05) {
-		auto currentSamples = platform.sampleElapsed();
-		if (lastSamples != platform.sampleElapsed()) {
-			printf("%s: %d\n", "Samples: ", currentSamples);
-			printf("%s: %f\n", "Seconds: ", platform.time());
-			lastSamples = currentSamples;
-		}
-	};
-	trimParams.amplitude = 0.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.25) {};
+		deaEffect1Parameters.frequency = delta * 10000.0f + 1;
+		deaEffect1.SetParameters(deaEffect1Parameters);
 
-	trimParams.amplitude = 1.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.3) {};
-	trimParams.amplitude = 0.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.5) {};
-
-	trimParams.amplitude = 1.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.55) {};
-	trimParams.amplitude = 0.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.75) {};
-
-	trimParams.amplitude = 1.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.8) {};
-	trimParams.amplitude = 0.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 0.95) {};
-
-	trimParams.amplitude = 1.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() < 1.0) {};
-	trimParams.amplitude = 0.0f;
-	trim.SetParameters(trimParams);
-	while (platform.time() <= 1.5) {
-		auto currentSamples = platform.sampleElapsed();
-		if (lastSamples != platform.sampleElapsed()) {
-			printf("%s: %d\n", "Samples: ", currentSamples);
-			printf("%s: %f\n", "Seconds: ", platform.time());
-			lastSamples = currentSamples;
-		}
+		platform.RecordForSeconds(0.01);
 	};
 
-	wavout.StopRecording();
+	// wavout.StopRecording();
 	platform.Terminate();
 }

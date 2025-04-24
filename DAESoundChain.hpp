@@ -550,129 +550,24 @@ namespace DEA {
 		}
 	};
 
-	class AudioFilterSoundChain : public SoundChainBase {
+	template <class DSP_T>
+	class DSPSoundChain : public SoundChainBase {
 	public:
-		AudioFilterSoundChain() {}
-		AudioFilterSoundChain(DSP_Biquad::Parameters &parameters) : _params(parameters ) {}
-		~AudioFilterSoundChain() {
-			if (_filterBank) { delete[] _filterBank; }
-		}
-
-		DSP_Biquad::Parameters GetParameters() {return _params;}
-		void SetParameters(DSP_Biquad::Parameters &parameters) {
-			_params = parameters;
-			PropogateParameters();
-		}
-
-	private:
-		DSP_Biquad::Parameters _params;
-		DSP_Biquad* _filterBank = nullptr;
-
-		void Reset() override {
-			if (_filterBank) { delete[] _filterBank; }
-
-			int numberOfChannels = ReadSettings().Channels;
-			int sampleRate = ReadSettings().SampleRate;
-
-			_filterBank = new DSP_Biquad[numberOfChannels];
-			for (int channel = 0; channel < numberOfChannels; channel++) {
-				_filterBank[channel].Reset(sampleRate);
-			}
-
-			PropogateParameters();
-		}
-
-		void Process(float* buffPtr, int numberOfFrames) override {
-			int numberOfChannels = ReadSettings().Channels;
-			int numberOfSamples = numberOfFrames * numberOfChannels;
-
-			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
-				for (int channel = 0; channel < numberOfChannels; channel++) {
-					buffPtr[sample+channel] = _filterBank[channel].GetSample(buffPtr[sample+channel]);
-				}
-			}
-		}
-
-		void PropogateParameters() {
-			if (!_filterBank) return;
-
-			int numberOfChannels = ReadSettings().Channels;
-			for (int channel = 0; channel < numberOfChannels; channel++) {
-				_filterBank[channel].SetParameters(_params);
-			}
-		}
-	};
-
-	class ModFilterSoundChain : public SoundChainBase {
-	public:
-		ModFilterSoundChain() {}
-		ModFilterSoundChain(DSP_EnvelopeFollower::Parameters &parameters) : _params(parameters ) {}
-		~ModFilterSoundChain() {
-			if (_filterBank) { delete[] _filterBank; }
-		}
-
-		DSP_EnvelopeFollower::Parameters GetParameters() {return _params;}
-		void SetParameters(DSP_EnvelopeFollower::Parameters &parameters) {
-			_params = parameters;
-			PropogateParameters();
-		}
-
-	private:
-		DSP_EnvelopeFollower::Parameters _params;
-		DSP_EnvelopeFollower* _filterBank = nullptr;
-
-		void Reset() override {
-			if (_filterBank) { delete[] _filterBank; }
-
-			int numberOfChannels = ReadSettings().Channels;
-			int sampleRate = ReadSettings().SampleRate;
-
-			_filterBank = new DSP_EnvelopeFollower[numberOfChannels];
-			for (int channel = 0; channel < numberOfChannels; channel++) {
-				_filterBank[channel].Reset(sampleRate);
-			}
-
-			PropogateParameters();
-		}
-
-		void Process(float* buffPtr, int numberOfFrames) override {
-			int numberOfChannels = ReadSettings().Channels;
-			int numberOfSamples = numberOfFrames * numberOfChannels;
-
-			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
-				for (int channel = 0; channel < numberOfChannels; channel++) {
-					buffPtr[sample+channel] = _filterBank[channel].GetSample(buffPtr[sample+channel]);
-				}
-			}
-		}
-
-		void PropogateParameters() {
-			if (!_filterBank) return;
-
-			int numberOfChannels = ReadSettings().Channels;
-			for (int channel = 0; channel < numberOfChannels; channel++) {
-				_filterBank[channel].SetParameters(_params);
-			}
-		}
-	};
-
-	class PhaserSoundChain : public SoundChainBase {
-	public:
-		PhaserSoundChain() {}
-		PhaserSoundChain(DSP_Phaser::Parameters &parameters) : _params(parameters ) {}
-		~PhaserSoundChain() {
+		DSPSoundChain() {}
+		DSPSoundChain(typename DSP_T::Parameters &parameters) : _params(parameters ) {}
+		~DSPSoundChain() {
 			if (_bank) { delete[] _bank; }
 		}
 
-		DSP_Phaser::Parameters GetParameters() {return _params;}
-		void SetParameters(DSP_Phaser::Parameters &parameters) {
+		typename DSP_T::Parameters GetParameters() {return _params;}
+		void SetParameters(typename DSP_T::Parameters &parameters) {
 			_params = parameters;
 			PropogateParameters();
 		}
 
 	private:
-		DSP_Phaser::Parameters _params;
-		DSP_Phaser* _bank = nullptr;
+		typename DSP_T::Parameters _params;
+		DSP_T* _bank = nullptr;
 
 		void Reset() override {
 			if (_bank) { delete[] _bank; }
@@ -680,7 +575,7 @@ namespace DEA {
 			int numberOfChannels = ReadSettings().Channels;
 			int sampleRate = ReadSettings().SampleRate;
 
-			_bank = new DSP_Phaser[numberOfChannels];
+			_bank = new DSP_T[numberOfChannels];
 			for (int channel = 0; channel < numberOfChannels; channel++) {
 				_bank[channel].Reset(sampleRate);
 			}
@@ -709,33 +604,43 @@ namespace DEA {
 		}
 	};
 
-	class DelaySoundChain : public SoundChainBase {
+	// TODO: pingpong not pingponging
+	template <class DSP_T>
+	class DSPPingPongSoundChain : public SoundChainBase {
 	public:
-		DelaySoundChain() {}
-		DelaySoundChain(DSP_Delay::Parameters &parameters) : _params(parameters ) {}
-		~DelaySoundChain() {
+		DSPPingPongSoundChain() {}
+		DSPPingPongSoundChain(typename DSP_T::Parameters &parameters) : _params(parameters ) {}
+		~DSPPingPongSoundChain() {
 			if (_bank) { delete[] _bank; }
+			if (_outSample) { delete[] _outSample; }
 		}
 
-		DSP_Delay::Parameters GetParameters() {return _params;}
-		void SetParameters(DSP_Delay::Parameters &parameters) {
+		typename DSP_T::Parameters GetParameters() {return _params;}
+		void SetParameters(typename DSP_T::Parameters &parameters) {
 			_params = parameters;
+			
 			PropogateParameters();
 		}
 
 	private:
-		DSP_Delay::Parameters _params;
-		DSP_Delay* _bank = nullptr;
+		typename DSP_T::Parameters _params;
+		DSP_T* _bank = nullptr;
+		float* _outSample = nullptr;
 
 		void Reset() override {
 			if (_bank) { delete[] _bank; }
+			if (_outSample) { delete[] _outSample; }
 
 			int numberOfChannels = ReadSettings().Channels;
 			int sampleRate = ReadSettings().SampleRate;
 
-			_bank = new DSP_Delay[numberOfChannels];
+			_bank = new DSP_T[numberOfChannels];
 			for (int channel = 0; channel < numberOfChannels; channel++) {
 				_bank[channel].Reset(sampleRate);
+			}
+			_outSample = new float[numberOfChannels];
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_outSample[channel] = 0.0f;
 			}
 
 			PropogateParameters();
@@ -746,8 +651,12 @@ namespace DEA {
 			int numberOfSamples = numberOfFrames * numberOfChannels;
 
 			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
+				_outSample[0] = _bank[0].GetSample(buffPtr[sample+numberOfChannels-1]);
+				for (int channel = 1; channel < numberOfChannels; channel++) {
+					_outSample[channel] = _bank[channel].GetSample(buffPtr[sample+channel-1]);
+				}
 				for (int channel = 0; channel < numberOfChannels; channel++) {
-					buffPtr[sample+channel] = _bank[channel].GetSample(buffPtr[sample+channel]);
+					buffPtr[sample+channel] = _outSample[channel];
 				}
 			}
 		}
@@ -762,4 +671,187 @@ namespace DEA {
 		}
 	};
 
+	template <class DSP_T>
+	class DSPLCRSoundChain : public SoundChainBase {
+	public:
+		DSPLCRSoundChain() {}
+		DSPLCRSoundChain(typename DSP_T::Parameters &parameters) : _params(parameters ) {}
+		~DSPLCRSoundChain() {
+			if (_bank) { delete[] _bank; }
+		}
+
+		typename DSP_T::Parameters GetParameters() {return _params;}
+		void SetParameters(typename DSP_T::Parameters &parameters) {
+			_params = parameters;
+			
+			PropogateParameters();
+		}
+
+	private:
+		typename DSP_T::Parameters _params;
+		DSP_T* _bank = nullptr;
+
+		void Reset() override {
+			if (_bank) { delete[] _bank; }
+
+			int numberOfChannels = ReadSettings().Channels;
+			int sampleRate = ReadSettings().SampleRate;
+
+			_bank = new DSP_T[numberOfChannels];
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].Reset(sampleRate);
+			}
+
+			PropogateParameters();
+		}
+
+		void Process(float* buffPtr, int numberOfFrames) override {
+			int numberOfChannels = ReadSettings().Channels;
+			int numberOfSamples = numberOfFrames * numberOfChannels;
+
+			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
+				float sum = 0;
+				for (int channel = 0; channel < numberOfChannels; channel++) {
+					sum += buffPtr[sample+channel];
+				}
+				sum *= 0.5f;
+				for (int channel = 0; channel < numberOfChannels; channel++) {
+					buffPtr[sample+channel] = _bank[channel].GetSample(buffPtr[sample+channel] + sum);
+				}
+			}
+		}
+
+		void PropogateParameters() {
+			if (!_bank) return;
+
+			int numberOfChannels = ReadSettings().Channels;
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].SetParameters(_params);
+			}
+		}
+	};
+
+	class PingPongDelaySoundChain : public SoundChainBase {
+	public:
+		PingPongDelaySoundChain() {}
+		PingPongDelaySoundChain(DSP_AnalogDelay::Parameters &parameters) : _params(parameters ) {}
+		~PingPongDelaySoundChain() {
+			if (_bank) { delete[] _bank; }
+			if (_outSample) { delete[] _outSample; }
+		}
+
+		DSP_AnalogDelay::Parameters GetParameters() {return _params;}
+		void SetParameters(DSP_AnalogDelay::Parameters &parameters) {
+			_params = parameters;
+			
+			PropogateParameters();
+		}
+
+	private:
+		DSP_AnalogDelay::Parameters _params;
+		DSP_AnalogDelay* _bank = nullptr;
+		float* _outSample = nullptr;
+
+		void Reset() override {
+			if (_bank) { delete[] _bank; }
+			if (_outSample) { delete[] _outSample; }
+
+			int numberOfChannels = ReadSettings().Channels;
+			int sampleRate = ReadSettings().SampleRate;
+
+			_bank = new DSP_AnalogDelay[numberOfChannels];
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].Reset(sampleRate);
+			}
+			_outSample = new float[numberOfChannels];
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_outSample[channel] = 0.0f;
+			}
+
+			PropogateParameters();
+		}
+
+		void Process(float* buffPtr, int numberOfFrames) override {
+			int numberOfChannels = ReadSettings().Channels;
+			int numberOfSamples = numberOfFrames * numberOfChannels;
+
+			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
+				_outSample[0] = _bank[0].GetSample(buffPtr[sample+numberOfChannels-1]);
+				for (int channel = 1; channel < numberOfChannels; channel++) {
+					_outSample[channel] = _bank[channel].GetSample(buffPtr[sample+channel-1]);
+				}
+				for (int channel = 0; channel < numberOfChannels; channel++) {
+					buffPtr[sample+channel] = _outSample[channel];
+				}
+			}
+		}
+
+		void PropogateParameters() {
+			if (!_bank) return;
+
+			int numberOfChannels = ReadSettings().Channels;
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].SetParameters(_params);
+			}
+		}
+	};
+
+	class LCRDelaySoundChain : public SoundChainBase {
+	public:
+		LCRDelaySoundChain() {}
+		LCRDelaySoundChain(DSP_AnalogDelay::Parameters &parameters) : _params(parameters ) {}
+		~LCRDelaySoundChain() {
+			if (_bank) { delete[] _bank; }
+		}
+
+		DSP_AnalogDelay::Parameters GetParameters() {return _params;}
+		void SetParameters(DSP_AnalogDelay::Parameters &parameters) {
+			_params = parameters;
+			
+			PropogateParameters();
+		}
+
+	private:
+		DSP_AnalogDelay::Parameters _params;
+		DSP_AnalogDelay* _bank = nullptr;
+
+		void Reset() override {
+			if (_bank) { delete[] _bank; }
+
+			int numberOfChannels = ReadSettings().Channels;
+			int sampleRate = ReadSettings().SampleRate;
+
+			_bank = new DSP_AnalogDelay[numberOfChannels];
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].Reset(sampleRate);
+			}
+
+			PropogateParameters();
+		}
+
+		void Process(float* buffPtr, int numberOfFrames) override {
+			int numberOfChannels = ReadSettings().Channels;
+			int numberOfSamples = numberOfFrames * numberOfChannels;
+
+			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
+				float sum = 0;
+				for (int channel = 0; channel < numberOfChannels; channel++) {
+					sum += buffPtr[sample+channel];
+				}
+				sum *= 0.5f;
+				for (int channel = 0; channel < numberOfChannels; channel++) {
+					buffPtr[sample+channel] = _bank[channel].GetSample(buffPtr[sample+channel] + sum);
+				}
+			}
+		}
+
+		void PropogateParameters() {
+			if (!_bank) return;
+
+			int numberOfChannels = ReadSettings().Channels;
+			for (int channel = 0; channel < numberOfChannels; channel++) {
+				_bank[channel].SetParameters(_params);
+			}
+		}
+	};
 }
