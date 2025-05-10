@@ -15,7 +15,7 @@ protected:
 	virtual void Process(float* buffPtr, int numberOfFrames) {};
 
 public:
-	void Initialize(SoundChainSettings &soundChainSettings) {
+	void Initialize(SoundChainSettings soundChainSettings) {
 		_settings = soundChainSettings;
 		
 		if (_previous) {

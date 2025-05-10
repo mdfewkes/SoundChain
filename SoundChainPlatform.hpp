@@ -2,11 +2,16 @@
 
 #include "SoundChain.hpp"
 
+struct SoundChainPlatformSettings {
+	int SampleRate;
+	int Channels;
+};
+
 // TODO: add buffering (double/triple or circular)
 
 class SoundChainPlatform {
 protected:
-	SoundChainSettings _settings;
+	SoundChainPlatformSettings _settings;
 	unsigned int _samplesElapsed;
 
 	virtual void Setup() {};
@@ -17,15 +22,15 @@ public:
 	SoundChainPlatform() {}
 	~SoundChainPlatform() {}
 
-	void Initialize(SoundChainSettings &soundChainSettings) {
+	void Initialize(SoundChainPlatformSettings soundChainPlatformSettings) {
 		if (_initialized) return;
 
-		_settings = soundChainSettings;
+		_settings = soundChainPlatformSettings;
 
 		Setup();
 
 		if (_previous) {
-			_previous->Initialize(_settings);
+			_previous->Initialize(GetSoundChainSettings());
 		}
 
 		Start();
@@ -46,6 +51,11 @@ public:
 
 	SoundChainBase* GetPrevious() {return _previous;}
 	void SetPrevious(SoundChainBase* previous) {_previous = previous;}
+
+	SoundChainSettings GetSoundChainSettings() {
+		SoundChainSettings settings = {_settings.SampleRate, _settings.Channels};
+		return settings;
+	}
 
 	unsigned int samplesElapsed() {return _samplesElapsed;}
 	double time() {return (double)_samplesElapsed / (double)_settings.SampleRate;}

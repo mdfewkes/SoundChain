@@ -26,11 +26,11 @@ private:
 	int _sizeInFrames;
 
 	void Setup() override {
-		_sizeInFrames = _settings.SampleRate;
-		_buffer = new float[_sizeInFrames * _settings.Channels];
+		_sizeInFrames = _settings.SampleRate * _settings.Channels;
+		_buffer = new float[_sizeInFrames];
 
 		_wavWriter = new WavWriterSoundChain();
-		_wavWriter->Initialize(_settings);
+		_wavWriter->Initialize(GetSoundChainSettings());
 		_wavWriter->SetPrevious(GetPrevious());
 	}
 

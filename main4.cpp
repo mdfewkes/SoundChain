@@ -12,10 +12,6 @@
 
 int main (int argc, char** argv) {
 
-	SoundChainSettings soundChainSettings;
-	soundChainSettings.SampleRate = SAMPLERATE;
-	soundChainSettings.Channels = CHANNELCOUNT;
-
 	WhiteNoiseSoundChain noise;
 
 	WavReaderSoundChain wavin;
@@ -50,7 +46,10 @@ int main (int argc, char** argv) {
 	// WavWriterSoundChain wavout;
 	// wavout.SetPrevious(&deaEffect4);
 
-	// PortAudioSCP platform;
+	SoundChainPlatformSettings soundChainSettings;
+	soundChainSettings.SampleRate = SAMPLERATE;
+	soundChainSettings.Channels = CHANNELCOUNT;
+
 	WaveOutSCP platform;
 	platform.SetPrevious(&deaEffect4);
 	platform.Initialize(soundChainSettings);
