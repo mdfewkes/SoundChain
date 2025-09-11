@@ -19,11 +19,7 @@ public:
 
 		float *outp = (float *)output;
 		PortAudioSCP *scPlatform = (PortAudioSCP *)userData;
-		SoundChainBase *chain = scPlatform->GetPrevious();
-
-		chain->ReadSamples(outp, frameCount);
-		
-		scPlatform->_samplesElapsed += frameCount;
+		scPlatform->FillBuffer(outp, frameCount);
 
 		return paContinue;
 	};
@@ -52,11 +48,11 @@ private:
 
 		memset(&outputParameters, 0, sizeof(PaStreamParameters));
 		outputParameters.device = outputDevice;
-		outputParameters.channelCount = _settings.Channels;
+		outputParameters.channelCount = GetSoundChainSettings().Channels;
 		outputParameters.sampleFormat = paFloat32;
 
 		err = Pa_OpenStream(&_paStreamHandle, NULL, &outputParameters, 
-							_settings.SampleRate, 0, paNoFlag, PortAudioSCP::audio_callback, this);
+							GetSoundChainSettings().SampleRate, 0, paNoFlag, PortAudioSCP::audio_callback, this);
 		checkErr(err);
 	}
 

@@ -12,17 +12,15 @@ public:
 		int framesToWrite = (int)(secondsToRecord * _settings.SampleRate);
 
 		while (framesToWrite > _sizeInFrames) {
-			_wavWriter->ReadSamples(_buffer, _sizeInFrames);
+			FillBuffer(_buffer, _sizeInFrames);
 			framesToWrite -= _sizeInFrames;
 		}
-		_wavWriter->ReadSamples(_buffer, framesToWrite);
-
-		_samplesElapsed += framesToWrite;
+		FillBuffer(_buffer, framesToWrite);
 	}
 
 private:
 	WavWriterSoundChain* _wavWriter;
-	float*  _buffer;
+	float* _buffer;
 	int _sizeInFrames;
 
 	void Setup() override {
@@ -30,16 +28,19 @@ private:
 		_buffer = new float[_sizeInFrames];
 
 		_wavWriter = new WavWriterSoundChain();
-		_wavWriter->Initialize(GetSoundChainSettings());
 		_wavWriter->SetPrevious(GetPrevious());
+		SetPrevious(_wavWriter);
 	}
 
 	void Start() override {
+		printf("Start Recording\n");
 		_wavWriter->StartRecording();
 	}
 
 	void End() override {
 		_wavWriter->StopRecording();
+		printf("Stop Recording\n");
+		delete _wavWriter;
 		delete[] _buffer;
 	}
 };
