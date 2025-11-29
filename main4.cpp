@@ -23,7 +23,7 @@ int main (int argc, char** argv) {
 	trim.SetParameters(trimParams);
 	trim.SetPrevious(&wavin);
 
-	DEA::DSPSoundChain<DEA::DSP_Biquad> deaEffect1;
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect1;
 	auto deaEffect1Parameters = deaEffect1.GetParameters();
 	deaEffect1.SetParameters(deaEffect1Parameters);
 	deaEffect1.SetPrevious(&trim);
@@ -61,8 +61,8 @@ int main (int argc, char** argv) {
 		// printf("%f\n", platform.time());
 		float delta = platform.GetTime() / 6.0;
 
-		deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
-		deaEffect1.SetParameters(deaEffect1Parameters);
+		// deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
+		// deaEffect1.SetParameters(deaEffect1Parameters);
 
 		// platform.RecordForSeconds(0.01);
 	};

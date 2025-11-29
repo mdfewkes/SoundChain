@@ -63,7 +63,7 @@ public:
 private:
 	bool _isRecording = false;
 	std::ofstream audioFile;
-	int bitDepth = 24;
+	int bitDepth = 16;
 	float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 	int preAudioPosition;
 
@@ -181,15 +181,52 @@ private:
 	void ReadData(int size) {
 		dataSize = size / (bitDepth/8);
 		data = new float[dataSize];
-		int dataIndex = 0;
-		const float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 
-		signed short int value = 0;
-		for (int i = 0; i < dataSize; i++) {
-			audioFile.read(reinterpret_cast<char*>(&value), bitDepth/8);
+		switch(bitDepth) {
+		case 16: {
+			signed short int value = 0;
+			for (int i = 0; i < dataSize; i++) {
+				printf("%d / %d\n", i+1, dataSize);
+				audioFile.read(reinterpret_cast<char*>(&value), 2);
 
-			data[dataIndex] = (float)value / bitDepthScale;
-			dataIndex++;
+				data[i] = (float)value / 32767.0f;
+			}
+			break;
+		}
+		case 24: {
+			signed long int value = 0;
+			unsigned char b[3];
+			for (int i = 0; i < dataSize; i++) {
+				audioFile.read((char*)b, 3);
+				value = 
+					(b[2] << 24) |
+					(b[1] << 16) |
+					(b[0] <<  8);
+
+				data[i] = (float)value / 2147483647.0f;
+			}
+			break;
+		}
+		case 32: {
+			signed long int value = 0;
+			unsigned char b[4];
+			for (int i = 0; i < dataSize; i++) {
+				audioFile.read((char*)b, 4);
+				value = 
+					(b[3] << 24) |
+					(b[2] << 16) |
+					(b[1] <<  8) |
+					(b[0] <<  0);
+
+				data[i] = (float)value / 2147483647.0f;
+			}
+			break;
+		}
+		default: {
+			for (int i = 0; i < dataSize; i++) {
+				data[i] = 0.0f;
+			}
+		}
 		}
 	}
 };
