@@ -8,7 +8,7 @@
 // #include "WaveOutSCP.hpp"
 
 #define SAMPLERATE 44100
-#define CHANNELCOUNT 2
+#define CHANNELCOUNT 1
 
 int main (int argc, char** argv) {
 
@@ -61,7 +61,7 @@ int main (int argc, char** argv) {
 		// printf("%f\n", platform.time());
 		float delta = platform.GetTime() / 6.0;
 
-		deaEffect1Parameters.frequency = delta*delta*delta * 9950.0f + 50;
+		deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
 		deaEffect1.SetParameters(deaEffect1Parameters);
 
 		// platform.RecordForSeconds(0.01);

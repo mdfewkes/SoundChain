@@ -3,7 +3,6 @@
 #include "SoundChain.hpp"
 
 // TODO: Set file path
-// Write more sample rates?
 // Sequel with threaded write?
 class WavWriterSoundChain : public SoundChainBase {
 public:
@@ -64,8 +63,8 @@ public:
 private:
 	bool _isRecording = false;
 	std::ofstream audioFile;
-	int bitDepth = 16;
-	int bitDepthScale = 32767;
+	int bitDepth = 24;
+	float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 	int preAudioPosition;
 
 	void Reset() override {
@@ -111,7 +110,6 @@ private:
 	int channels = 2;
 	int sampleRate = 44100;
 	int bitDepth = 16;
-	float bitDepthScale = 32767.0f;
 
 	void Reset() override {
 		currentDataIndex = 0;
@@ -154,10 +152,6 @@ private:
 				audioFile.read(reinterpret_cast<char*>(&dummy), 4); // byte rate
 				audioFile.read(reinterpret_cast<char*>(&dummy), 2); // block align
 				audioFile.read(reinterpret_cast<char*>(&bitDepth), 2); // bits per sample
-
-				bitDepthScale = pow(2, bitDepth) / 2 - 1;
-
-				// std::cout << channels << " " << bitDepth << " " << bitDepthScale << std::endl;
 			} else if (chunckID == "data") {
 				int chunckSize;
 				audioFile.read(reinterpret_cast<char*>(&chunckSize), 4);
@@ -188,9 +182,10 @@ private:
 		dataSize = size / (bitDepth/8);
 		data = new float[dataSize];
 		int dataIndex = 0;
+		const float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 
+		signed short int value = 0;
 		for (int i = 0; i < dataSize; i++) {
-			signed short int value = 0;
 			audioFile.read(reinterpret_cast<char*>(&value), bitDepth/8);
 
 			data[dataIndex] = (float)value / bitDepthScale;
