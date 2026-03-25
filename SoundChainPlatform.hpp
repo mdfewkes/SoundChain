@@ -6,8 +6,6 @@
 struct SoundChainPlatformSettings {
 	int SampleRate = 48000;
 	int Channels = 2;
-	int BufferCount = 2;
-	int BufferSize = 2048;
 };
 
 class SoundChainPlatform {

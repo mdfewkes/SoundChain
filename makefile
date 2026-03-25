@@ -1,8 +1,9 @@
 EXEC = D32
 
-CLIB = -I./lib/portaudio/include ./lib/portaudio/lib/.libs/libportaudio.a -lrt -lasound -ljack -pthread 
+# CLIB = -I./lib/portaudio/include ./lib/portaudio/lib/.libs/libportaudio.a -lrt -lasound -ljack -pthread 
+CLIB =  -I./lib/miniaudio
 
-MAIN = main4.cpp
+MAIN = main.cpp
 
 $(EXEC): $(MAIN)
 	g++ -o $@ $^ $(CLIB)

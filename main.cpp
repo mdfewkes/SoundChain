@@ -1,109 +1,88 @@
 #include <stdio.h>
-#include <time.h>
-#include <cstring>
-#include <stdlib.h>
-#include <portaudio.h>
+#include <math.h>
 
-#define SAMPLERATE 48000.
-#define BUFFERSIZE 1024
+#include "SoundChain.hpp"
+#include "PGSSoundChain.hpp"
+#include "TBLSoundChain.hpp"
+#include "SoundChainWaveFile.hpp"
+#include "DAESoundChain.hpp"
+#include "MiniAudioSCP.hpp"
 
-typedef struct _myUserData {
-	float delay[(int)SAMPLERATE/2];
-	int rp;
-} myUserData;
-
-int audio_callback(const void *input, void *output, 
-	unsigned long frameCount, 
-	const PaStreamCallbackTimeInfo *timeInfo, 
-	PaStreamCallbackFlags statuseFlags, 
-	void *userData) {
-
-	myUserData *p = (myUserData *)userData;
-	int rp = p->rp;
-	float out, *delay = p->delay;
-	float *inp = (float *)input, *outp = (float *)output;
-	for (int i = 0; i < frameCount; i++) {
-		out = delay[rp];
-		delay[rp++] = inp[i] + out*0.5;
-		if (rp >= SAMPLERATE/2) rp = 0;
-		outp[i] = out + inp[i];
-	}
-	p->rp = rp;
-	return paContinue;
-}
-
-static void checkErr(PaError err) {
-	if (err != paNoError) {
-		printf("PortAudio error: %s", Pa_GetErrorText(err));
-		exit(EXIT_FAILURE);
-	}
-}
+#define SAMPLERATE 44100
+#define CHANNELCOUNT 1
 
 int main (int argc, char** argv) {
 
-	PaError err;
-	PaDeviceIndex inputDevice, outputDevice;
-	PaStreamParameters inputParameters, outputParameters;
-	PaStream *paStreamHandle;
-	myUserData *data = (myUserData *) calloc(sizeof(myUserData), 1);
+	TBLAdditiveOscSoundChain testOsc;
+	testOsc.SetFrequency(220.0f);
 
-	err = Pa_Initialize();
-	checkErr(err);
+	WavReaderSoundChain wavin;
+	// wavin.SetPrevious(&testOsc);
 
-	int numDevices = Pa_GetDeviceCount();
-	// printf("Number of devices: %d\n", numDevices);
-	if (numDevices < 0) {
-		printf("Error getting device count.\n");
-		exit(EXIT_FAILURE);
-	} else if (numDevices == 0) {
-		printf("There are no available audio devices on this machine.");
-		exit(EXIT_SUCCESS);
-	}
-	// for (int i = 0; i < numDevices; i++) {
-	// 	const PaDeviceInfo *deviceInfo;
-	// 	deviceInfo = Pa_GetDeviceInfo(i);
-	// 	printf("Device %d:\n", i);
-	// 	printf("  name: %s\n", deviceInfo->name);
-	// 	printf("  maxInputChannels: %d\n", deviceInfo->maxInputChannels);
-	// 	printf("  maxOutputChannels: %d\n", deviceInfo->maxOutputChannels);
-	// 	printf("  defaultSampleRate: %f\n", deviceInfo->defaultSampleRate);
-	// }
+	TrimSoundChain trim;
+	auto trimParams = trim.GetParameters();
+	// trimParams.amplitude = 0.5f;
+	trim.SetParameters(trimParams);
+	trim.SetPrevious(&testOsc);
 
-	// printf("choose device for input: ");
-	// scanf("%d", &inputDevice);
-	inputDevice = 0; //Pa_GetDefaultInputDevice();
-	// printf("choose device for output: ");
-	// scanf("%d", &outputDevice);
-	outputDevice = 0; //Pa_GetDefaultOutputDevice();
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect1;
+	auto deaEffect1Parameters = deaEffect1.GetParameters();
+	deaEffect1.SetParameters(deaEffect1Parameters);
+	deaEffect1.SetPrevious(&trim);
 
-	memset(&inputParameters, 0, sizeof(PaStreamParameters));
-	inputParameters.device = inputDevice;
-	inputParameters.channelCount = 1;
-	inputParameters.sampleFormat = paFloat32;
-	memset(&outputParameters, 0, sizeof(PaStreamParameters));
-	outputParameters.device = outputDevice;
-	outputParameters.channelCount = 1;
-	outputParameters.sampleFormat = paFloat32;
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect2;
+	auto deaEffect2Parameters = deaEffect2.GetParameters();
+	deaEffect2.SetParameters(deaEffect2Parameters);
+	deaEffect2.SetPrevious(&deaEffect1);
 
-	err = Pa_OpenStream(&paStreamHandle, &inputParameters, &outputParameters, 
-						SAMPLERATE, BUFFERSIZE, paNoFlag, audio_callback, data);
-	checkErr(err);
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect3;
+	auto deaEffect3Parameters = deaEffect3.GetParameters();
+	deaEffect3.SetParameters(deaEffect3Parameters);
+	deaEffect3.SetPrevious(&deaEffect2);
 
-	err = Pa_StartStream(paStreamHandle);
-	checkErr(err);
+	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect4;
+	auto deaEffect4Parameters = deaEffect4.GetParameters();
+	deaEffect4.SetParameters(deaEffect4Parameters);
+	deaEffect4.SetPrevious(&deaEffect3);
 
-	Pa_Sleep(10 * 1000);
+	WavWriterSoundChain wavout;
+	wavout.SetPrevious(&deaEffect4);
 
-	err = Pa_StopStream(paStreamHandle);
-	checkErr(err);
+	SoundChainPlatformSettings soundChainSettings;
+	soundChainSettings.SampleRate = SAMPLERATE;
+	soundChainSettings.Channels = CHANNELCOUNT;
 
-	err = Pa_CloseStream(paStreamHandle);
-	checkErr(err);
+	MiniAudioSCP platform;
+	platform.SetPrevious(&wavout);
+	platform.Initialize(soundChainSettings);
 
-	err = Pa_Terminate();
-	checkErr(err);
+	wavout.StartRecording();
 
-	free(data);
+	float nextUpdateTime = 0.0f;
+	while (platform.GetTime() <= 2.0) {
+		float delta = platform.GetTime() / 2.0;
 
-	return EXIT_SUCCESS;
+		// deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
+		// deaEffect1.SetParameters(deaEffect1Parameters);
+
+		if (platform.GetTime() > nextUpdateTime) {
+			testOsc.SetFrequency(10000.0f * delta*delta + 10.0f);
+			nextUpdateTime += 0.01f;
+		}
+
+		// char input;
+		// std::cin >> input;
+		// if (input == 'q') {
+		// 	break;
+		// } else if (input == 'p') {
+		// 	testOsc.SetFrequency(testOsc.GetFrequency() * 1.0594f);
+		// } else if (input == 'o') {
+		// 	testOsc.SetFrequency(testOsc.GetFrequency() * 0.9438f);
+		// }
+	};
+
+	wavout.StopRecording();
+	platform.Terminate();
 }
+
+// g++ -I./lib/miniaudio main.cpp ./lib/miniaudio/miniaudio.c -o SCWin

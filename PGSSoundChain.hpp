@@ -5,7 +5,7 @@
 // Wavetable sine osc
 class PGSSinewaveSoundChain : public SoundChainBase {
 public:
-	PGSSinewaveSoundChain(double frequency) 
+	PGSSinewaveSoundChain(double frequency = 440.0) 
 	: _freq(frequency) {}
 	~PGSSinewaveSoundChain() {
 		if (_waveTable) delete[] _waveTable;
@@ -31,10 +31,10 @@ private:
 	void Process(float* buffPtr, int numberOfFrames) override {
 		if (_waveTable == nullptr) return;
 
-		for (int frame = 0; frame < numberOfFrames * _settings.Channels; frame += _settings.Channels) {
+		for (int frame = 0; frame < numberOfFrames * ReadSettings().Channels; frame += ReadSettings().Channels) {
 			float value = _amp * _waveTable[(int)_positionInTable];
 
-			for (int channel = 0; channel < _settings.Channels; channel++) {
+			for (int channel = 0; channel < ReadSettings().Channels; channel++) {
 				buffPtr[frame + channel] += value;
 			}
 
@@ -46,7 +46,7 @@ private:
 	void BuildTable() {
 		if (_waveTable) delete[] _waveTable;
 
-		_tableSize = _settings.SampleRate;
+		_tableSize = ReadSettings().SampleRate;
 
 		_waveTable = new float[_tableSize];
 		for (int position = 0; position < _tableSize; position++) {
@@ -59,7 +59,7 @@ private:
 // Sequel tests smaller table sizes
 class PGSSinewaveSoundChain2 : public SoundChainBase {
 public:
-	PGSSinewaveSoundChain2(double frequency) 
+	PGSSinewaveSoundChain2(double frequency = 440.0) 
 	: _freq(frequency) {}
 	~PGSSinewaveSoundChain2() {
 		if (_waveTable != nullptr) delete[] _waveTable;
@@ -86,10 +86,10 @@ private:
 	void Process(float* buffPtr, int numberOfFrames) override {
 		if (_waveTable == nullptr) return;
 
-		for (int frame = 0; frame < numberOfFrames * _settings.Channels; frame += _settings.Channels) {
+		for (int frame = 0; frame < numberOfFrames * ReadSettings().Channels; frame += ReadSettings().Channels) {
 			float value = _amp * _waveTable[(int)_positionInTable];
 
-			for (int channel = 0; channel < _settings.Channels; channel++) {
+			for (int channel = 0; channel < ReadSettings().Channels; channel++) {
 				buffPtr[frame + channel] += value;
 			}
 
@@ -101,9 +101,9 @@ private:
 	void BuildTable() {
 		if (_waveTable) delete[] _waveTable;
 
-		_tableScale = 2048.0 / _settings.SampleRate; // 2048 magic table target size
+		_tableScale = 2048.0 / ReadSettings().SampleRate; // 2048 magic table target size
 
-		_tableSize = _settings.SampleRate / (int)(1.0 / _tableScale);
+		_tableSize = ReadSettings().SampleRate / (int)(1.0 / _tableScale);
 
 		_waveTable = new float[_tableSize];
 		for (int position = 0; position < _tableSize; position++) {

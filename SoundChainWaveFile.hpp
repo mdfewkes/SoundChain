@@ -3,6 +3,7 @@
 #include "SoundChain.hpp"
 
 // TODO: Set file path
+// Read more samplerates? Currently only supports 16bit
 // Sequel with threaded write?
 class WavWriterSoundChain : public SoundChainBase {
 public:
@@ -79,8 +80,7 @@ private:
 			// Write sample to file
 			int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 			for (int sample = 0; sample < numberOfSamples; sample++) {
-				signed long int value = buffPtr[sample] * bitDepthScale;
-				WriteIntToFile(value, bitDepth/8);
+				WriteSampleToFile(buffPtr[sample]);
 			}
 		}
 	}
@@ -88,10 +88,21 @@ private:
 	void WriteIntToFile(int value, int byteSize) {
 		audioFile.write(reinterpret_cast<const char*>(&value), byteSize);
 	}
+
+	void WriteSampleToFile(float value) {
+		switch (bitDepth){
+			case 16:
+				signed long int scaledValue;
+				scaledValue = value * bitDepthScale;
+				audioFile.write(reinterpret_cast<const char*>(&scaledValue), bitDepth/8);
+				break;
+			default:
+				audioFile.write(0, bitDepth/8);
+		}	
+	}
 };
 
 // TODO: Set file path
-// Read more samplerates? Currently only supports 16bit
 // Sequel with threaded open?
 class WavReaderSoundChain : public SoundChainBase {
 public:
@@ -107,7 +118,7 @@ private:
 	float* data = nullptr;
 	int dataSize = 0;
 	int currentDataIndex = 0.0;
-	int channels = 2;
+	int channels = 1;
 	int sampleRate = 44100;
 	int bitDepth = 16;
 
@@ -180,6 +191,7 @@ private:
 
 	void ReadData(int size) {
 		dataSize = size / (bitDepth/8);
+		if (data != nullptr) delete[] data;
 		data = new float[dataSize];
 
 		switch(bitDepth) {
