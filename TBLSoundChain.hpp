@@ -2,6 +2,7 @@
 
 #include "SoundChain.hpp"
 #include <vector>
+#include <array>
 
 
 // Wavetable sine osc
@@ -42,16 +43,16 @@ public:
 	}
 
 private:
-	const int DEFAULT_TABLE_SIZE = 64;
-	const int NUMBER_OF_OSC = 32;
+	static const int DEFAULT_TABLE_SIZE = 1024;
+	static const int NUMBER_OF_OSC = 1024;
 	int numberOfActiveOsc = 0;
 	float* _waveTable = nullptr;
 	int _tableSize = DEFAULT_TABLE_SIZE;
 	float _tableScale;
-	std::vector<float> _oscFrequency;
-	std::vector<float> _oscAmplitude;
-	std::vector<float> _oscPositionInTable;
-	std::vector<float> _oscHarmonic;
+	std::array<float, NUMBER_OF_OSC> _oscFrequency = {};
+	std::array<float, NUMBER_OF_OSC> _oscAmplitude = {};
+	std::array<float, NUMBER_OF_OSC> _oscPositionInTable = {};
+	std::array<float, NUMBER_OF_OSC> _oscHarmonic = {};
 	float _baseFrequency;
 	float _amp = 0.5f;
 	float _z1 = 0.0f;
@@ -83,10 +84,6 @@ private:
 	void Reset() override {
 		BuildTable();
 
-		_oscFrequency.resize(NUMBER_OF_OSC, 0.0f);
-		_oscAmplitude.resize(NUMBER_OF_OSC, 0.0f);
-		_oscPositionInTable.resize(NUMBER_OF_OSC, 0.0f);
-		_oscHarmonic.resize(NUMBER_OF_OSC, 0.0f);
 		float osc_mag = 0;
 		numberOfActiveOsc = 0;
 		for (int i = 0; i < NUMBER_OF_OSC; i++) {
@@ -115,13 +112,11 @@ private:
 	}
 
 	float Lookup(float position) {
-		// return _waveTable[(int)position];
-
 		float t = position - (int)position;
-		float startPosition = (int)position;
-		float endPosition = (int)position + 1;
+		int startPosition = (int)position;
+		int endPosition = (int)position + 1;
 		if (endPosition >= _tableSize) endPosition -= _tableSize;
 
-		return (t * _waveTable[(int)endPosition]) + ((1.0f - t) * _waveTable[(int)startPosition]);
+		return (t * _waveTable[endPosition]) + ((1.0f - t) * _waveTable[startPosition]);
 	}
 };
