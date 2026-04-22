@@ -42,7 +42,7 @@ namespace DEA {
 		struct Parameters {
 			float frequency = 1000.0f;
 			float q = 0.707f;
-			float filterGain = 0.0f;
+			float filterGain = -12.0f;
 			FilterType filterType = FilterType::LowPass;
 		};
 		struct Coefficients {
@@ -62,7 +62,7 @@ namespace DEA {
 		Parameters GetParameters() {return _params;}
 		void SetParameters(Parameters &parameters) {
 			_params = parameters;
-			CalculateCoefficients();
+			_coeffs = CalculateCoefficients(_params);
 		}
 
 		Coefficients GetCoefficients() {return _coeffs;}
@@ -78,7 +78,7 @@ namespace DEA {
 			_y_z1 = 0.0f;
 			_y_z2 = 0.0f;
 
-			CalculateCoefficients();
+			_coeffs = CalculateCoefficients(_params);
 		}
 
 		float GetSample(float xn) {
@@ -106,284 +106,332 @@ namespace DEA {
 		float _y_z1 = 0.0f;
 		float _y_z2 = 0.0f;
 
-		void CalculateCoefficients() {
+		Coefficients CalculateCoefficients(Parameters &parameters) {
 			switch (_params.filterType) {
 				case FilterType::LowPass:
-					CalculateLowPassCoefficients();
-					break;
+					return CalculateLowPassCoefficients(parameters);
 				case FilterType::HighPass:
-					CalculateHighPassCoefficients();
-					break;
+					return CalculateHighPassCoefficients(parameters);
 				case FilterType::BandPass:
-					CalculateBandPassCoefficients();
-					break;
+					return CalculateBandPassCoefficients(parameters);
 				case FilterType::BandStop:
-					CalculateBandStopCoefficients();
-					break;
+					return CalculateBandStopCoefficients(parameters);
 				case FilterType::LowShelf:
-					CalculateLowShelfCoefficients();
-					break;
+					return CalculateLowShelfCoefficients(parameters);
 				case FilterType::HighShelf:
-					CalculateHighShelfCoefficients();
-					break;
+					return CalculateHighShelfCoefficients(parameters);
 				case FilterType::ButterworthLowPass:
-					CalculateButterworthLowPassCoefficients();
-					break;
+					return CalculateButterworthLowPassCoefficients(parameters);
 				case FilterType::ButterworthHighPass:
-					CalculateButterworthHighPassCoefficients();
-					break;
+					return CalculateButterworthHighPassCoefficients(parameters);
 				case FilterType::LinkwitzRileyLowPass:
-					CalculateLinkwitzRileyLowPassCoefficients();
-					break;
+					return CalculateLinkwitzRileyLowPassCoefficients(parameters);
 				case FilterType::LinkwitzRileyHighPass:
-					CalculateLinkwitzRileyHighPassCoefficients();
-					break;
+					return CalculateLinkwitzRileyHighPassCoefficients(parameters);
 				case FilterType::AllPass1stOrder:
-					CalculateAllPass1stOrderCoefficients();
-					break;
+					return CalculateAllPass1stOrderCoefficients(parameters);
 				case FilterType::AllPass2ndOrder:
-					CalculateAllPass2ndOrderCoefficients();
-					break;
+					return CalculateAllPass2ndOrderCoefficients(parameters);
 				case FilterType::LowPass1stOrder:
-					CalculateLowPass1stOrderCoefficients();
-					break;
+					return CalculateLowPass1stOrderCoefficients(parameters);
 				case FilterType::HighPass1stOrder:
-					CalculateHighPass1stOrderCoefficients();
-					break;
+					return CalculateHighPass1stOrderCoefficients(parameters);
 				case FilterType::Peak:
-					CalculatePeakCoefficients();
-					break;
-			} 
+					return CalculatePeakCoefficients(parameters);
+			}
+
+			Coefficients newCoeffs;
+			return newCoeffs;
 		}
 
-		void CalculateLowPassCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
+		Coefficients CalculateLowPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
 			float cosw0 = cos(w0);
 			float sinw0 = sin(w0);
-			float d = 1.0f / _params.q;
+			float d = 1.0f / parameters.q;
 			float beta = 0.5f * ((1.0f - d / 2.0f * sinw0) / (1.0f + d / 2.0f * sinw0));
 			float gamma = (0.5f + beta) * cosw0;
 
-			_coeffs.a0 = (0.5f + beta - gamma) / 2.0f;
-			_coeffs.a1 = 0.5f + beta - gamma;
-			_coeffs.a2 = (0.5f + beta - gamma) / 2.0f;
-			_coeffs.b1 = -2.0f * gamma;
-			_coeffs.b2 = 2.0f * beta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = (0.5f + beta - gamma) / 2.0f;
+			coefficients.a1 = 0.5f + beta - gamma;
+			coefficients.a2 = (0.5f + beta - gamma) / 2.0f;
+			coefficients.b1 = -2.0f * gamma;
+			coefficients.b2 = 2.0f * beta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateHighPassCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
+		Coefficients CalculateHighPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
 			float cosw0 = cos(w0);
 			float sinw0 = sin(w0);
-			float d = 1.0f / _params.q;
+			float d = 1.0f / parameters.q;
 			float beta = 0.5f * ((1.0f - d / 2.0f * sinw0) / (1.0f + d / 2.0f * sinw0));
 			float gamma = (0.5f + beta) * cosw0;
 
-			_coeffs.a0 = (0.5f + beta + gamma) / 2.0f;
-			_coeffs.a1 = -(0.5f + beta + gamma);
-			_coeffs.a2 = (0.5f + beta + gamma) / 2.0f;
-			_coeffs.b1 = -2.0f * gamma;
-			_coeffs.b2 = 2.0f * beta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = (0.5f + beta + gamma) / 2.0f;
+			coefficients.a1 = -(0.5f + beta + gamma);
+			coefficients.a2 = (0.5f + beta + gamma) / 2.0f;
+			coefficients.b1 = -2.0f * gamma;
+			coefficients.b2 = 2.0f * beta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateBandPassCoefficients() {
-			float k = tan((M_PI * _params.frequency) / _sampleRate);
+		Coefficients CalculateBandPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float k = tan((M_PI * parameters.frequency) / _sampleRate);
 			float k2 = k*k;
-			float delta = k2 * _params.q + k + _params.q;
+			float delta = k2 * parameters.q + k + parameters.q;
 
-			_coeffs.a0 = k / _params.q;
-			_coeffs.a1 = 0.0f;
-			_coeffs.a2 = -k / delta;
-			_coeffs.b1 = (2.0f * _params.q * (k2 - 1)) / delta;
-			_coeffs.b2 = (k2 * _params.q - k + _params.q) / delta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = k / parameters.q;
+			coefficients.a1 = 0.0f;
+			coefficients.a2 = -k / delta;
+			coefficients.b1 = (2.0f * parameters.q * (k2 - 1)) / delta;
+			coefficients.b2 = (k2 * parameters.q - k + parameters.q) / delta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateBandStopCoefficients() {
-			float k = tan((M_PI * _params.frequency) / _sampleRate);
+		Coefficients CalculateBandStopCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float k = tan((M_PI * parameters.frequency) / _sampleRate);
 			float k2 = k*k;
-			float delta = k2 * _params.q + k + _params.q;
+			float delta = k2 * parameters.q + k + parameters.q;
 
-			_coeffs.a0 = (_params.q * (k2 + 1)) / delta;
-			_coeffs.a1 = (2.0f * _params.q * (k2 - 1)) / delta;
-			_coeffs.a2 = (_params.q * (k2 + 1)) / delta;
-			_coeffs.b1 = (2.0f * _params.q * (k2 - 1)) / delta;
-			_coeffs.b2 = (k2 * _params.q - k + _params.q) / delta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = (parameters.q * (k2 + 1)) / delta;
+			coefficients.a1 = (2.0f * parameters.q * (k2 - 1)) / delta;
+			coefficients.a2 = (parameters.q * (k2 + 1)) / delta;
+			coefficients.b1 = (2.0f * parameters.q * (k2 - 1)) / delta;
+			coefficients.b2 = (k2 * parameters.q - k + parameters.q) / delta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateLowShelfCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
-			float mu = std::pow(10, _params.filterGain / 20.0f);
+		Coefficients CalculateLowShelfCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
+			float mu = std::pow(10, parameters.filterGain / 20.0f);
 			float beta = 4.0f / (1.0f + mu);
 			float delta = beta * tan(w0 / 2.0f);
 			float gamma = (1.0f - delta) / (1.0f + delta);
 
-			_coeffs.a0 = (1 - gamma) / 2.0f;
-			_coeffs.a1 = (1 - gamma) / 2.0f;
-			_coeffs.a2 = 0.0f;
-			_coeffs.b1 = -gamma;
-			_coeffs.b2 = 0.0f;
-			_coeffs.c0 = mu - 1.0f;
-			_coeffs.d0 = 1.0f;
+			coefficients.a0 = (1 - gamma) / 2.0f;
+			coefficients.a1 = (1 - gamma) / 2.0f;
+			coefficients.a2 = 0.0f;
+			coefficients.b1 = -gamma;
+			coefficients.b2 = 0.0f;
+			coefficients.c0 = mu - 1.0f;
+			coefficients.d0 = 1.0f;
+
+			return coefficients;
 		}
 
-		void CalculateHighShelfCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
-			float mu = std::pow(10, _params.filterGain / 20.0f);
+		Coefficients CalculateHighShelfCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
+			float mu = std::pow(10, parameters.filterGain / 20.0f);
 			float beta = (1.0f + mu) / 4.0f;
 			float delta = beta * tan(w0 / 2.0f);
 			float gamma = (1.0f - delta) / (1.0f + delta);
 
-			_coeffs.a0 = (1 + gamma) / 2.0f;
-			_coeffs.a1 = (1 + gamma) / -2.0f;
-			_coeffs.a2 = 0.0f;
-			_coeffs.b1 = -gamma;
-			_coeffs.b2 = 0.0f;
-			_coeffs.c0 = mu - 1.0f;
-			_coeffs.d0 = 1.0f;
+			coefficients.a0 = (1 + gamma) / 2.0f;
+			coefficients.a1 = (1 + gamma) / -2.0f;
+			coefficients.a2 = 0.0f;
+			coefficients.b1 = -gamma;
+			coefficients.b2 = 0.0f;
+			coefficients.c0 = mu - 1.0f;
+			coefficients.d0 = 1.0f;
+
+			return coefficients;
 		}
 
-		void CalculateButterworthLowPassCoefficients() {
-			float c = 1.0f / tan((M_PI * _params.frequency) / _sampleRate);
+		Coefficients CalculateButterworthLowPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float c = 1.0f / tan((M_PI * parameters.frequency) / _sampleRate);
 			float a0 = 1.0f / (1.0f + std::sqrt(2.0f * c) + c*c);
 
-			_coeffs.a0 = a0;
-			_coeffs.a1 = 2.0f * a0;
-			_coeffs.a2 = a0;
-			_coeffs.b1 = 2.0f * a0 * (1.0f - c*c);
-			_coeffs.b2 = a0 * (1.0f - std::sqrt(2.0f * c) + c*c);
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = a0;
+			coefficients.a1 = 2.0f * a0;
+			coefficients.a2 = a0;
+			coefficients.b1 = 2.0f * a0 * (1.0f - c*c);
+			coefficients.b2 = a0 * (1.0f - std::sqrt(2.0f * c) + c*c);
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateButterworthHighPassCoefficients() {
-			float c = tan((M_PI * _params.frequency) / _sampleRate);
+		Coefficients CalculateButterworthHighPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float c = tan((M_PI * parameters.frequency) / _sampleRate);
 			float a0 = 1.0f / (1.0f + std::sqrt(2.0f * c) + c*c);
 
-			_coeffs.a0 = a0;
-			_coeffs.a1 = -2.0f * a0;
-			_coeffs.a2 = a0;
-			_coeffs.b1 = 2.0f * a0 * (c*c - 1.0f);
-			_coeffs.b2 = a0 * (1.0f - std::sqrt(2.0f * c) + c*c);
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = a0;
+			coefficients.a1 = -2.0f * a0;
+			coefficients.a2 = a0;
+			coefficients.b1 = 2.0f * a0 * (c*c - 1.0f);
+			coefficients.b2 = a0 * (1.0f - std::sqrt(2.0f * c) + c*c);
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateLinkwitzRileyLowPassCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
-			float omega = M_PI * _params.frequency;
+		Coefficients CalculateLinkwitzRileyLowPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
+			float omega = M_PI * parameters.frequency;
 			float kappa = omega / tan(w0);
 			float delta = kappa*kappa + omega*omega + 2.0f * kappa * omega;
 			float omega2 = omega*omega;
 			float kappa2 = kappa*kappa;
 
-			_coeffs.a0 = omega2 / delta;
-			_coeffs.a1 = 2.0f * (omega2 / delta);
-			_coeffs.a2 = omega2 / delta;
-			_coeffs.b1 = (-2.0f * kappa2 + 2.0f * omega2) / delta;
-			_coeffs.b2 = (-2.0f * kappa * omega + kappa2 + omega2) / delta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = omega2 / delta;
+			coefficients.a1 = 2.0f * (omega2 / delta);
+			coefficients.a2 = omega2 / delta;
+			coefficients.b1 = (-2.0f * kappa2 + 2.0f * omega2) / delta;
+			coefficients.b2 = (-2.0f * kappa * omega + kappa2 + omega2) / delta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateLinkwitzRileyHighPassCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
-			float omega = M_PI * _params.frequency;
+		Coefficients CalculateLinkwitzRileyHighPassCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
+			float omega = M_PI * parameters.frequency;
 			float kappa = omega / tan(w0);
 			float delta = kappa*kappa + omega*omega + 2.0f * kappa * omega;
 			float omega2 = omega*omega;
 			float kappa2 = kappa*kappa;
 
-			_coeffs.a0 = kappa2 / delta;
-			_coeffs.a1 = (-2.0f * kappa2) / delta;
-			_coeffs.a2 = kappa2 / delta;
-			_coeffs.b1 = (-2.0f * kappa2 + 2.0f * omega2) / delta;
-			_coeffs.b2 = (-2.0f * kappa * omega + kappa2 + omega2) / delta;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = kappa2 / delta;
+			coefficients.a1 = (-2.0f * kappa2) / delta;
+			coefficients.a2 = kappa2 / delta;
+			coefficients.b1 = (-2.0f * kappa2 + 2.0f * omega2) / delta;
+			coefficients.b2 = (-2.0f * kappa * omega + kappa2 + omega2) / delta;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateAllPass1stOrderCoefficients() {
-			float w0 = M_PI * _params.frequency / _sampleRate;
+		Coefficients CalculateAllPass1stOrderCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = M_PI * parameters.frequency / _sampleRate;
 			float tanw0 = tan(w0);
 			float alpha = (tanw0 - 1) / (tanw0 +1);
 
-			_coeffs.a0 = alpha;
-			_coeffs.a1 = 1.0f;
-			_coeffs.a2 = 0.0f;
-			_coeffs.b1 = alpha;
-			_coeffs.b2 = 0.0f;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = alpha;
+			coefficients.a1 = 1.0f;
+			coefficients.a2 = 0.0f;
+			coefficients.b1 = alpha;
+			coefficients.b2 = 0.0f;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateAllPass2ndOrderCoefficients() {
-			float bw = _params.frequency / _params.q;
+		Coefficients CalculateAllPass2ndOrderCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float bw = parameters.frequency / parameters.q;
 			float tanbwpisr = tan(bw * M_PI / _sampleRate);
 			float alpha = (tanbwpisr - 1) / (tanbwpisr +1);
-			float beta = -cos(2.0f * M_PI * _params.frequency / _sampleRate);
+			float beta = -cos(2.0f * M_PI * parameters.frequency / _sampleRate);
 
-			_coeffs.a0 = -alpha;
-			_coeffs.a1 = beta * (1.0f - alpha);
-			_coeffs.a2 = 1.0f;
-			_coeffs.b1 = beta * (1.0f - alpha);
-			_coeffs.b2 = -alpha;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = -alpha;
+			coefficients.a1 = beta * (1.0f - alpha);
+			coefficients.a2 = 1.0f;
+			coefficients.b1 = beta * (1.0f - alpha);
+			coefficients.b2 = -alpha;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateLowPass1stOrderCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
+		Coefficients CalculateLowPass1stOrderCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
 			float cosw0 = cos(w0);
 			float sinw0 = sin(w0);
 			float gamma = cosw0 / (1.0f + sinw0);
 
-			_coeffs.a0 = (1.0f - gamma) / 2.0f;
-			_coeffs.a1 = (1.0f - gamma) / 2.0f;
-			_coeffs.a2 = 0.0f;
-			_coeffs.b1 = -gamma;
-			_coeffs.b2 = 0.0f;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = (1.0f - gamma) / 2.0f;
+			coefficients.a1 = (1.0f - gamma) / 2.0f;
+			coefficients.a2 = 0.0f;
+			coefficients.b1 = -gamma;
+			coefficients.b2 = 0.0f;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculateHighPass1stOrderCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
+		Coefficients CalculateHighPass1stOrderCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
 			float cosw0 = cos(w0);
 			float sinw0 = sin(w0);
 			float gamma = cosw0 / (1.0f + sinw0);
 
-			_coeffs.a0 = (1.0f + gamma) / 2.0f;
-			_coeffs.a1 = -((1.0f + gamma) / 2.0f);
-			_coeffs.a2 = 0.0f;
-			_coeffs.b1 = -gamma;
-			_coeffs.b2 = 0.0f;
-			_coeffs.c0 = 1.0f;
-			_coeffs.d0 = 0.0f;
+			coefficients.a0 = (1.0f + gamma) / 2.0f;
+			coefficients.a1 = -((1.0f + gamma) / 2.0f);
+			coefficients.a2 = 0.0f;
+			coefficients.b1 = -gamma;
+			coefficients.b2 = 0.0f;
+			coefficients.c0 = 1.0f;
+			coefficients.d0 = 0.0f;
+
+			return coefficients;
 		}
 
-		void CalculatePeakCoefficients() {
-			float w0 = 2.0f * M_PI * _params.frequency / _sampleRate;
-			float mu = std::pow(10, _params.filterGain / 20.0f);
+		Coefficients CalculatePeakCoefficients(Parameters &parameters) {
+			Coefficients coefficients;
+
+			float w0 = 2.0f * M_PI * parameters.frequency / _sampleRate;
+			float mu = std::pow(10, parameters.filterGain / 20.0f);
 			float zeta = 4.0f / (1.0f + mu);
-			float zetatanw02q = zeta * tan(w0 / 2.0f * _params.q);
+			float zetatanw02q = zeta * tan(w0 / 2.0f * parameters.q);
 			float beta = 0.5f * (1.0f - zetatanw02q) / (1.0f + zetatanw02q);
 			float gamma = (0.5f + beta) * cos(w0);
 
-			_coeffs.a0 = 0.5f - beta;
-			_coeffs.a1 = 0.0f;
-			_coeffs.a2 = -(0.5f - beta);
-			_coeffs.b1 = -2.0f * gamma;
-			_coeffs.b2 =2.0f * beta;
-			_coeffs.c0 = mu - 1.0f;
-			_coeffs.d0 = 1.0f;
+			coefficients.a0 = 0.5f - beta;
+			coefficients.a1 = 0.0f;
+			coefficients.a2 = -(0.5f - beta);
+			coefficients.b1 = -2.0f * gamma;
+			coefficients.b2 =2.0f * beta;
+			coefficients.c0 = mu - 1.0f;
+			coefficients.d0 = 1.0f;
+
+			return coefficients;
 		}
 	};
 
