@@ -17,6 +17,7 @@ int main (int argc, char** argv) {
 	testOsc.SetFrequency(220.0f);
 
 	WavReaderSoundChain wavin;
+	wavin.OpenFile("input.wav");
 	wavin.SetPrevious(&testOsc);
 
 	TrimSoundChain trim;

@@ -2,7 +2,7 @@
 
 #include "SoundChain.hpp"
 
-// TODO: Set file path
+// TODO:
 // Read more samplerates? Currently only supports 16bit
 // Sequel with threaded write?
 class WavWriterSoundChain : public SoundChainBase {
@@ -14,13 +14,13 @@ public:
 		}
 	}
 
-	void StartRecording() {
+	void StartRecording(std::string path = "output.wav") {
 		if (_isRecording) return;
 
 		SoundChainSettings settings = ReadSettings();
 
 		// Open file
-		audioFile.open("output.wav", std::ios::binary);
+		audioFile.open(path, std::ios::binary);
 
 		// Write header
 		audioFile << "RIFF";
@@ -102,49 +102,21 @@ private:
 	}
 };
 
-// TODO: Set file path
+// TODO:
 // Sequel with threaded open?
 class WavReaderSoundChain : public SoundChainBase {
 public:
 	WavReaderSoundChain() {
-		OpenFile();
+		// OpenFile();
 	}
 	~WavReaderSoundChain() {
-		if (data != nullptr) delete[] data;
+		CloseFile();
 	}
 
-private:
-	std::ifstream audioFile;
-	float* data = nullptr;
-	int dataSize = 0;
-	int currentDataIndex = 0.0;
-	int channels = 1;
-	int sampleRate = 44100;
-	int bitDepth = 16;
+	void OpenFile(std::string path = "input.wav") {
+		if (data != nullptr) return;
 
-	void Reset() override {
-		currentDataIndex = 0;
-	}
-
-	void Process(float* buffPtr, int numberOfFrames) override {
-		if (data == nullptr) return;
-
-		int numberOfChannels = ReadSettings().Channels;
-		int numberOfSamples = numberOfFrames * numberOfChannels;
-		int playbackChannels = std::min(channels, numberOfChannels);
-
-		for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
-			for (int channel = 0; channel < playbackChannels; channel++) {
-				if (currentDataIndex+channel >= dataSize) return;
-
-				buffPtr[sample+channel] += data[currentDataIndex+channel];
-			}
-			currentDataIndex += channels;
-		}
-	}
-
-	void OpenFile() {
-		audioFile.open("input.wav", std::ios::binary);
+		audioFile.open(path, std::ios::binary);
 
 		while (!audioFile.eof() && data == nullptr) {
 			std::string chunckID = ReadChunckID();
@@ -178,6 +150,40 @@ private:
 		audioFile.close();
 	}
 
+	void CloseFile() {
+		if (data != nullptr) delete[] data;
+	}
+
+private:
+	std::ifstream audioFile;
+	float* data = nullptr;
+	int dataSize = 0;
+	int currentDataIndex = 0.0;
+	int channels = 1;
+	int sampleRate = 44100;
+	int bitDepth = 16;
+
+	void Reset() override {
+		currentDataIndex = 0;
+	}
+
+	void Process(float* buffPtr, int numberOfFrames) override {
+		if (data == nullptr) return;
+
+		int numberOfChannels = ReadSettings().Channels;
+		int numberOfSamples = numberOfFrames * numberOfChannels;
+		int playbackChannels = std::min(channels, numberOfChannels);
+
+		for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
+			for (int channel = 0; channel < playbackChannels; channel++) {
+				if (currentDataIndex+channel >= dataSize) return;
+
+				buffPtr[sample+channel] += data[currentDataIndex+channel];
+			}
+			currentDataIndex += channels;
+		}
+	}
+
 	std::string ReadChunckID() {
 		std::string chunckID = "";
 		for (int i = 0; i < 4; i++) {
@@ -198,7 +204,7 @@ private:
 		case 16: {
 			signed short int value = 0;
 			for (int i = 0; i < dataSize; i++) {
-				printf("%d / %d\n", i+1, dataSize);
+				// printf("%d / %d\n", i+1, dataSize);
 				audioFile.read(reinterpret_cast<char*>(&value), 2);
 
 				data[i] = (float)value / 32767.0f;
