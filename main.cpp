@@ -8,24 +8,24 @@
 #include "DAESoundChain.hpp"
 #include "MiniAudioSCP.hpp"
 
-#define SAMPLERATE 44100
+#define SAMPLERATE 48000
 #define CHANNELCOUNT 1
 
 int main (int argc, char** argv) {
 
-	TBLAdditiveOscSoundChain testOsc;
+	TBL::FMOscSoundChain testOsc;
 	testOsc.SetFrequency(220.0f);
 
 	WavReaderSoundChain wavin;
-	// wavin.SetPrevious(&testOsc);
+	wavin.SetPrevious(&testOsc);
 
 	TrimSoundChain trim;
 	auto trimParams = trim.GetParameters();
-	// trimParams.amplitude = 0.5f;
+	trimParams.amplitude = 0.5f;
 	trim.SetParameters(trimParams);
-	trim.SetPrevious(&testOsc);
+	trim.SetPrevious(&wavin);
 
-	DEA::DSPSoundChain<DEA::DSP_Bypass> deaEffect1;
+	DEA::DSPSoundChain<DEA::DSP_Biquad> deaEffect1;
 	auto deaEffect1Parameters = deaEffect1.GetParameters();
 	deaEffect1.SetParameters(deaEffect1Parameters);
 	deaEffect1.SetPrevious(&trim);
@@ -59,16 +59,20 @@ int main (int argc, char** argv) {
 	wavout.StartRecording();
 
 	float nextUpdateTime = 0.0f;
-	while (platform.GetTime() <= 2.0) {
-		float delta = platform.GetTime() / 2.0;
+	while (platform.GetTime() <= 6.0) {
+		float delta = platform.GetTime() / 6.0;
 
-		// deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
-		// deaEffect1.SetParameters(deaEffect1Parameters);
+		deaEffect1Parameters.frequency = delta*delta*delta * 9850.0f + 150;
+		deaEffect1.SetParameters(deaEffect1Parameters);
 
-		if (platform.GetTime() > nextUpdateTime) {
-			testOsc.SetFrequency(10000.0f * delta*delta + 10.0f);
-			nextUpdateTime += 0.01f;
-		}
+		testOsc.SetFrequency(1000.0f - (1000.0f * delta + 10.0f));
+		// testOsc.SetRatio(5, (1.0f * delta) + 1.0f);
+		testOsc.SetMod(0, 1, 0.25f * delta);
+		testOsc.SetMod(1, 2, 0.25f * delta);
+		testOsc.SetMod(2, 3, 0.25f * delta);
+		testOsc.SetMod(3, 4, 0.25f * delta);
+		testOsc.SetMod(4, 5, 0.25f * delta);
+		testOsc.SetMod(5, 5, 0.25f * delta);
 
 		// char input;
 		// std::cin >> input;
