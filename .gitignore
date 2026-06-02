@@ -407,3 +407,4 @@ output.wav
 .DS_Store
 D32
 peaks
+*.sublime-workspace
