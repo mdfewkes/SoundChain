@@ -12,13 +12,14 @@ public:
 	~PortAudioSCP() {}
 
 	static int audio_callback(const void *input, void *output, 
-		unsigned long frameCount, 
-		const PaStreamCallbackTimeInfo *timeInfo, 
-		PaStreamCallbackFlags statuseFlags, 
-		void *userData) {
+			unsigned long frameCount, 
+			const PaStreamCallbackTimeInfo *timeInfo, 
+			PaStreamCallbackFlags statuseFlags, 
+			void *userData) {
 
-		float *outp = (float *)output;
 		PortAudioSCP *scPlatform = (PortAudioSCP *)userData;
+		float *outp = (float *)output;
+		
 		scPlatform->FillBuffer(outp, frameCount);
 
 		return paContinue;

@@ -1,7 +1,8 @@
 EXEC = D32
 
 # CLIB = -I./lib/portaudio/include ./lib/portaudio/lib/.libs/libportaudio.a -lrt -lasound -ljack -pthread 
-CLIB =  ./lib/miniaudio/miniaudio.c -I./lib/miniaudio
+# CLIB =  ./lib/miniaudio/miniaudio.c -I./lib/miniaudio
+CLIB = -framework AudioToolbox
 
 MAIN = main.cpp
 

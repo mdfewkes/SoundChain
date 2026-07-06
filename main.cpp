@@ -6,7 +6,7 @@
 #include "TBLSoundChain.hpp"
 #include "SoundChainWaveFile.hpp"
 #include "DAESoundChain.hpp"
-#include "MiniAudioSCP.hpp"
+#include "CoreAudioSCP.hpp"
 
 #define SAMPLERATE 48000
 #define CHANNELCOUNT 1
@@ -53,7 +53,7 @@ int main (int argc, char** argv) {
 	soundChainSettings.SampleRate = SAMPLERATE;
 	soundChainSettings.Channels = CHANNELCOUNT;
 
-	MiniAudioSCP platform;
+	CoreAudioSCP platform;
 	platform.SetPrevious(&wavout);
 	platform.Initialize(soundChainSettings);
 

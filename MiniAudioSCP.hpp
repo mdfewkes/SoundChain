@@ -9,9 +9,13 @@ public:
 	MiniAudioSCP() {}
 	~MiniAudioSCP() {}
 
-	static void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-		float *outp = (float *)pOutput;
+	static void data_callback(ma_device* pDevice, 
+			void* pOutput, const void* pInput, 
+			ma_uint32 frameCount) {
+
 		MiniAudioSCP *scPlatform = (MiniAudioSCP *)pDevice->pUserData;
+		float *outp = (float *)pOutput;
+		
 		scPlatform->FillBuffer(outp, frameCount);
 	};
 
