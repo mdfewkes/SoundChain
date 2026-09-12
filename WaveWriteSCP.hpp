@@ -3,10 +3,10 @@
 #include "SoundChainPlatform.hpp"
 #include "SoundChainWaveFile.hpp"
 
-class WaveOutSCP : public SoundChainPlatform {
+class WaveWriteSCP : public SoundChainPlatform {
 public:
-	WaveOutSCP() {}
-	~WaveOutSCP() {}
+	WaveWriteSCP() {}
+	~WaveWriteSCP() {}
 
 	void RecordForSeconds(double secondsToRecord) {
 		int framesToWrite = (int)(secondsToRecord * _settings.SampleRate);
