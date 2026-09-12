@@ -24,7 +24,7 @@ private:
 	int _sizeInFrames;
 
 	void Setup() override {
-		_sizeInFrames = _settings.SampleRate * _settings.Channels;
+		_sizeInFrames = GetSoundChainSettings().SampleRate * GetSoundChainSettings().Channels;
 		_buffer = new float[_sizeInFrames];
 
 		_wavWriter = new WavWriterSoundChain();
