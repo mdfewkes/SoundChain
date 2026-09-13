@@ -48,7 +48,10 @@ public:
 	};
 
 	void FillBuffer(float* buffPtr, int numberOfFrames) {
-		_previous->ReadSamples(buffPtr, numberOfFrames);
+		if (_previous) {
+			_previous->ReadSamples(buffPtr, numberOfFrames);
+		}
+		
 		_samplesElapsed += numberOfFrames;
 	}
 
