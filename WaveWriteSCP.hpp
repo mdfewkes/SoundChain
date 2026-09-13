@@ -9,7 +9,7 @@ public:
 	~WaveWriteSCP() {}
 
 	void RecordForSeconds(double secondsToRecord) {
-		int framesToWrite = (int)(secondsToRecord * _settings.SampleRate);
+		int framesToWrite = (int)(secondsToRecord * GetSoundChainSettings().SampleRate);
 
 		while (framesToWrite > _sizeInFrames) {
 			FillBuffer(_buffer, _sizeInFrames);

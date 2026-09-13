@@ -16,7 +16,7 @@ public:
 		InitializeBuffers();
 
 		if (_bufferInput) {
-			_bufferInput->Initialize(_settings);
+			_bufferInput->Initialize(ReadSettings());
 			FillSecondaryBuffer();
 		}
 	}
@@ -35,7 +35,7 @@ private:
 	size_t _bufferIndex = 0;
 
 	void InitializeBuffers() {
-		_bufferSize = _numberOfFrames * _settings.Channels;
+		_bufferSize = _numberOfFrames * ReadSettings().Channels;
 		_bufferIndex = _bufferSize;
 
 		_bufferPointerPrimary = new float[_bufferSize];
@@ -56,11 +56,11 @@ private:
 	void FillSecondaryBuffer() {
 		if (_bufferInput == nullptr) return;
 		
-		_bufferInput->ReadSamples(_bufferPointerSecondary, _bufferSize/_settings.Channels);
+		_bufferInput->ReadSamples(_bufferPointerSecondary, _bufferSize/ReadSettings().Channels);
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
-		int numberOfSamples = numberOfFrames * _settings.Channels;
+		int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 		for (int sample = 0; sample < numberOfSamples; sample++) {
 
 			if (_bufferIndex >= _bufferSize) {
@@ -95,7 +95,7 @@ public:
 		InitializeBuffers();
 
 		if (_bufferInput) {
-			_bufferInput->Initialize(_settings);
+			_bufferInput->Initialize(ReadSettings());
 			FillLastBuffer();
 		}
 	}
@@ -115,7 +115,7 @@ private:
 	size_t _bufferIndex = 0;
 
 	void InitializeBuffers() {
-		_bufferSize = _numberOfFrames * _settings.Channels;
+		_bufferSize = _numberOfFrames * ReadSettings().Channels;
 		_bufferIndex = _bufferSize;
 
 		_bufferPointers = new float*[_numberOfBuffers];
@@ -142,11 +142,11 @@ private:
 		
 		int bufferIndex = _currentPointer - 1;
 		if (bufferIndex < 0) bufferIndex = _numberOfBuffers - 1;
-		_bufferInput->ReadSamples(_bufferPointers[bufferIndex], _bufferSize/_settings.Channels);
+		_bufferInput->ReadSamples(_bufferPointers[bufferIndex], _bufferSize/ReadSettings().Channels);
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
-		int numberOfSamples = numberOfFrames * _settings.Channels;
+		int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 		for (int sample = 0; sample < numberOfSamples; sample++) {
 
 			if (_bufferIndex >= _bufferSize) {

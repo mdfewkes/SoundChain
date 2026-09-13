@@ -1,6 +1,8 @@
 #pragma once
 
 #include "SoundChain.hpp"
+#include <string>
+#include <fstream>
 
 // TODO:
 // Read more samplerates? Currently only supports 16bit

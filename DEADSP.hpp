@@ -1,7 +1,7 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
-#include <cmath>
 #include <cstring>
 
 namespace DEA {
