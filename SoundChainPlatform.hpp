@@ -49,8 +49,11 @@ public:
 	};
 
 	void FillBuffer(float* buffPtr, int numberOfFrames) {
-		_previous->ReadSamples(buffPtr, numberOfFrames);
-		_samplesElapsed.fetch_add(numberOfFrames);
+		if (_previous) {
+			_previous->ReadSamples(buffPtr, numberOfFrames);
+		}
+		
+		_samplesElapsed += numberOfFrames;
 	}
 
 	SoundChainBase* GetPrevious() {return _previous;};
