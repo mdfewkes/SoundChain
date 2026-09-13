@@ -1,7 +1,8 @@
 #pragma once
 
 #include "SoundChain.hpp"
-#include <vector>
+#include <atomic>
+#include <cstdint>
 
 struct SoundChainPlatformSettings {
 	int SampleRate = 48000;
@@ -30,7 +31,7 @@ public:
 			_previous->Initialize(GetSoundChainSettings());
 		}
 
-		_samplesElapsed = 0.0f;
+		_samplesElapsed.store(0);
 
 		Start();
 
@@ -49,7 +50,7 @@ public:
 
 	void FillBuffer(float* buffPtr, int numberOfFrames) {
 		_previous->ReadSamples(buffPtr, numberOfFrames);
-		_samplesElapsed += numberOfFrames;
+		_samplesElapsed.fetch_add(numberOfFrames);
 	}
 
 	SoundChainBase* GetPrevious() {return _previous;};
@@ -61,12 +62,12 @@ public:
 	};
 	SoundChainPlatformSettings GetSoundChainPlatformSettings() {return _settings;};
 
-	unsigned int GetSamplesElapsed() {return _samplesElapsed;};
-	double GetTime() {return (double)_samplesElapsed / (double)_settings.SampleRate;};
+	unsigned int GetSamplesElapsed() {return _samplesElapsed.load();};
+	double GetTime() {return (double)_samplesElapsed.load() / (double)_settings.SampleRate;};
 
 private:
 	SoundChainPlatformSettings _settings;
 	SoundChainBase* _previous = nullptr;
 	bool _initialized = false;
-	unsigned int _samplesElapsed;
+	std::atomic<uint64_t> _samplesElapsed;
 };
