@@ -562,7 +562,6 @@ namespace DEA {
 		typename DSP_T::Parameters GetParameters() {return _params;}
 		void SetParameters(typename DSP_T::Parameters &parameters) {
 			_params = parameters;
-			PropogateParameters();
 		}
 
 	private:
@@ -579,13 +578,13 @@ namespace DEA {
 			for (int channel = 0; channel < numberOfChannels; channel++) {
 				_bank[channel].Reset(sampleRate);
 			}
-
-			PropogateParameters();
 		}
 
 		void Process(float* buffPtr, int numberOfFrames) override {
 			int numberOfChannels = ReadSettings().Channels;
 			int numberOfSamples = numberOfFrames * numberOfChannels;
+
+			PropogateParameters();
 
 			for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
 				for (int channel = 0; channel < numberOfChannels; channel++) {

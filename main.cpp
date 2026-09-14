@@ -1,15 +1,11 @@
-#include <stdio.h>
-#include <math.h>
-
 #include "SoundChain.hpp"
-#include "PGSSoundChain.hpp"
 #include "TBLSoundChain.hpp"
 #include "SoundChainWaveFile.hpp"
 #include "DAESoundChain.hpp"
 #include "CoreAudioSCP.hpp"
 
 #define SAMPLERATE 48000
-#define CHANNELCOUNT 1
+#define CHANNELCOUNT 2
 
 int main (int argc, char** argv) {
 
