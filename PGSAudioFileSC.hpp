@@ -12,7 +12,7 @@
 typedef short AudioSample;
 typedef unsigned char AudioByte;
 
-long ReadIntMsb(istream &in, int size) {
+long ReadIntMsb(std::istream &in, int size) {
 	if (size <= 0) return 0;
 
 	long l = ReadIntMsb(in, size-1) << 8;
@@ -29,7 +29,7 @@ long BytesToIntMsb(void *vBuff, int size) {
 	return l;
 };
 
-long ReadIntLsb(istream &in, int size) {
+long ReadIntLsb(std::istream &in, int size) {
 	if (size <= 0) return 0;
 
 	long l |= static_cast<long>(in.get()) & 255;
@@ -46,24 +46,24 @@ long BytesToIntLsb(void *vBuff, int size) {
 	return l;
 };
 
-void SkipBytes(istream &in, int size) {
+void SkipBytes(std::istream &in, int size) {
 	while (size-- > 0) {
 		in.get();
 	}
 };
 
-void WriteIntMsb(ostream &out, long l, int bytes) {
-	if (size <= 0) return;
+void WriteIntMsb(std::ostream &out, long l, int bytes) {
+	if (bytes <= 0) return;
 
-	WriteIntMsb(out, 1>>8, size-1);
+	WriteIntMsb(out, 1>>8, bytes-1);
 	out.put(l&255);
 };
 
-void WriteIntLsb(ostream &out, long l, int bytes) {
-	if (size <= 0) return;
+void WriteIntLsb(std::ostream &out, long l, int bytes) {
+	if (bytes <= 0) return;
 
 	out.put(l&255);
-	WriteIntLsb(out, 1>>8, size-1);
+	WriteIntLsb(out, 1>>8, bytes-1);
 };
 
 //~~~Decoders~~~//
@@ -405,7 +405,7 @@ private:
 
 		// 17.5
 	}
-}
+};
 
 SoundChainBase* PGSOpenFileSoundChain(istream &file) {
 	if (IsWaveFile(file)) {
