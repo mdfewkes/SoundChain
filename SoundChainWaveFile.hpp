@@ -159,7 +159,7 @@ private:
 			int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 			for (int sample = 0; sample < numberOfSamples; sample++) {
 				// WriteSampleToFile(buffPtr[sample]);
-				_ringBuffer.Push(sample);
+				_ringBuffer.Push(buffPtr[sample]);
 			}
 
 			_dataReady.fetch_add(1);
