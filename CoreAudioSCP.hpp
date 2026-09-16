@@ -62,7 +62,6 @@ private:
 		streamDesc.mBytesPerFrame = 4 * streamDesc.mChannelsPerFrame;
 		streamDesc.mBytesPerPacket = streamDesc.mBytesPerFrame * streamDesc.mFramesPerPacket;
 
-		// Non-interleaved: set on Input scope (commonly for output units)
 		err = AudioUnitSetProperty(
 			_unit,
 			kAudioUnitProperty_StreamFormat,

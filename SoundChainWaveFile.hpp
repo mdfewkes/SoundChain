@@ -3,6 +3,51 @@
 #include "SoundChain.hpp"
 #include <string>
 #include <fstream>
+#include <atomic>
+#include <thread>
+
+template <typename T, int S>
+class RingBuffer {
+public:
+	static_assert(S > 0, "Size must be positive");
+
+	bool Push(const T& item) {
+		int headIndex = head.load(std::memory_order_relaxed);
+		int next = NextIndex(headIndex);
+		if (next == tail.load(std::memory_order_acquire)) {
+			return false; // full
+		}
+		buffer[headIndex] = item;
+		head.store(next, std::memory_order_release);
+		return true;
+	}
+
+	T Pop() {
+		T item;
+
+		int tailIndex = tail.load(std::memory_order_relaxed);
+		if (tailIndex == head.load(std::memory_order_acquire)) {
+			return item; // empty
+		}
+		item = buffer[tailIndex];
+		tail.store(NextIndex(tailIndex), std::memory_order_release);
+		return item;
+	}
+
+	bool isEmpty() const {
+		return head.load(std::memory_order_acquire) ==
+			   tail.load(std::memory_order_acquire);
+	}
+
+private:
+	constexpr int NextIndex(int i) const noexcept {
+		return (i + 1) % S;
+	}
+
+	std::array<T, S+1> buffer;
+	std::atomic<int> head{0};
+	std::atomic<int> tail{0};
+};
 
 // TODO:
 // Read more samplerates? Currently only supports 16bit
@@ -11,13 +56,13 @@ class WavWriterSoundChain : public SoundChainBase {
 public:
 	WavWriterSoundChain() {}
 	~WavWriterSoundChain() {
-		if (_isRecording) {
+		if (_isRecording.load()) {
 			StopRecording();
 		}
 	}
 
 	void StartRecording(std::string path = "output.wav") {
-		if (_isRecording) return;
+		if (_isRecording.load()) return;
 
 		SoundChainSettings settings = ReadSettings();
 
@@ -45,10 +90,17 @@ public:
 
 		preAudioPosition = audioFile.tellp();
 
-		_isRecording = true;
+		_isRecording.store(true);
+
+		_writerThread = std::thread(WriteThread, std::ref(audioFile), std::ref(_ringBuffer), std::ref(_isRecording), std::ref(_dataReady), bitDepth);
 	}
 	void StopRecording() {
-		if (!_isRecording) return;
+		if (!_isRecording.load()) return;
+
+		_isRecording.store(false);
+		_dataReady.fetch_add(1);
+		_dataReady.notify_one();
+		_writerThread.join();
 
 		int postAudioPosition = audioFile.tellp();
 
@@ -59,31 +111,59 @@ public:
 		WriteIntToFile(postAudioPosition - 8, 4);
 
 		audioFile.close();
+	}
 
-		_isRecording = false;
+	static void WriteThread(std::ofstream &audioFile, RingBuffer<float, 524288> &ringBuffer, std::atomic<bool> &isRecording, std::atomic<size_t> &dataReady, int bitDepth) {
+		int lastSeenDataFlag = dataReady.load();
+		float bitDepthScale = pow(2, bitDepth) / 2 - 1;
+		while (isRecording.load()) {
+			dataReady.wait(lastSeenDataFlag);
+
+			while (!ringBuffer.isEmpty()) {
+				float value = ringBuffer.Pop();
+				switch (bitDepth){
+					case 16:
+						signed long int scaledValue;
+						scaledValue = value * bitDepthScale;
+						audioFile.write(reinterpret_cast<const char*>(&scaledValue), bitDepth/8);
+						break;
+					default:
+						audioFile.write(0, bitDepth/8);
+				}
+			}
+
+			lastSeenDataFlag = dataReady.load();
+		}
 	}
 
 private:
-	bool _isRecording = false;
+	std::atomic<bool> _isRecording{false};
+	std::atomic<size_t> _dataReady{0};
 	std::ofstream audioFile;
+	std::thread _writerThread;
+	RingBuffer<float, 524288> _ringBuffer;
 	int bitDepth = 16;
 	float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 	int preAudioPosition;
 
 	void Reset() override {
-		if (_isRecording) {
+		if (_isRecording.load()) {
 			StopRecording();
 			StartRecording();
 		}
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
-		if (_isRecording) {
+		if (_isRecording.load()) {
 			// Write sample to file
 			int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 			for (int sample = 0; sample < numberOfSamples; sample++) {
-				WriteSampleToFile(buffPtr[sample]);
+				// WriteSampleToFile(buffPtr[sample]);
+				_ringBuffer.Push(sample);
 			}
+
+			_dataReady.fetch_add(1);
+			_dataReady.notify_one();
 		}
 	}
 
@@ -100,7 +180,7 @@ private:
 				break;
 			default:
 				audioFile.write(0, bitDepth/8);
-		}	
+		}
 	}
 };
 
