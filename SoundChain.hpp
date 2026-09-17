@@ -1,6 +1,7 @@
 #pragma once
 
 #include <math.h>
+#include <atomic>
 
 struct SoundChainSettings {
 	int SampleRate;
@@ -60,18 +61,20 @@ public:
 	TrimSoundChain() {}
 	TrimSoundChain(Parameters &parameters) : _params(parameters ) {}
 
-	Parameters GetParameters() {return _params;}
+	Parameters GetParameters() {return _params.load();}
 	void SetParameters(Parameters &parameters) {
-		_params = parameters;
+		_params.store(parameters);
 	}
 
 private:
-	Parameters _params;
+	std::atomic<Parameters> _params;
 
 	void Process(float* buffPtr, int numberOfFrames) override {
+		Parameters params = _params.load();
+		
 		int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 		for (int sample = 0; sample < numberOfSamples; sample++) {
-			buffPtr[sample] = _params.amplitude * buffPtr[sample];
+			buffPtr[sample] = params.amplitude * buffPtr[sample];
 		}
 	}
 };

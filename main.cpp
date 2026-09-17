@@ -63,13 +63,16 @@ int main (int argc, char** argv) {
 		deaEffect1.SetParameters(deaEffect1Parameters);
 
 		testOsc.SetFrequency(1000.0f - (1000.0f * delta + 10.0f));
-		// testOsc.SetRatio(5, (1.0f * delta) + 1.0f);
+		testOsc.SetRatio(5, (1.0f * delta) + 1.0f);
 		testOsc.SetMod(0, 1, 0.25f * delta);
 		testOsc.SetMod(1, 2, 0.25f * delta);
 		testOsc.SetMod(2, 3, 0.25f * delta);
 		testOsc.SetMod(3, 4, 0.25f * delta);
 		testOsc.SetMod(4, 5, 0.25f * delta);
 		testOsc.SetMod(5, 5, 0.25f * delta);
+
+		trimParams.amplitude = (1 - delta) * 0.5f;
+		trim.SetParameters(trimParams);
 
 		// char input;
 		// std::cin >> input;

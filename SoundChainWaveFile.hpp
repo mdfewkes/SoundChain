@@ -51,7 +51,6 @@ private:
 
 // TODO:
 // Read more samplerates? Currently only supports 16bit
-// Sequel with threaded write?
 class WavWriterSoundChain : public SoundChainBase {
 public:
 	WavWriterSoundChain() {}
