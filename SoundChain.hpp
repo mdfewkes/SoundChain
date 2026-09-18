@@ -71,7 +71,7 @@ private:
 
 	void Process(float* buffPtr, int numberOfFrames) override {
 		Parameters params = _params.load();
-		
+
 		int numberOfSamples = numberOfFrames * ReadSettings().Channels;
 		for (int sample = 0; sample < numberOfSamples; sample++) {
 			buffPtr[sample] = params.amplitude * buffPtr[sample];
@@ -89,29 +89,33 @@ public:
 	SinewaveSoundChain() {}
 	SinewaveSoundChain(Parameters &parameters) : _params(parameters ) {}
 	SinewaveSoundChain(double frequency) {
-		_params.frequency = frequency;
+		Parameters params = _params.load();
+		params.frequency = frequency;
+		_params.store(params);
 	}
 
-	Parameters GetParameters() {return _params;}
+	Parameters GetParameters() {return _params.load();}
 	void SetParameters(Parameters &parameters) {
-		_params = parameters;
-		_stepSize = _params.frequency / ReadSettings().SampleRate;
+		_params.store(parameters);
+		_stepSize = parameters.frequency / ReadSettings().SampleRate;
 	}
 
 private:
-	Parameters _params;
+	std::atomic<Parameters> _params;
 	double _phase = 0.0;
 	double _stepSize = 0.0;
 
 	void Reset() override {
-		_stepSize = _params.frequency / ReadSettings().SampleRate;
+		_stepSize = _params.load().frequency / ReadSettings().SampleRate;
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
+		Parameters params = _params.load();
+
 		int numberOfChannels = ReadSettings().Channels;
 		int numberOfSamples = numberOfFrames * numberOfChannels;
 		for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
-			float value =  _params.amplitude * sin(_phase * 2 * M_PI);
+			float value =  params.amplitude * sin(_phase * 2 * M_PI);
 
 			for (int channel = 0; channel < numberOfChannels; channel++) {
 				buffPtr[sample + channel] += value;
