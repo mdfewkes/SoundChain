@@ -1325,7 +1325,7 @@ namespace DEA {
 		struct Parameters {
 			float frequency = 1000.0f;
 			float q = 0.707f;
-			float filterOrder = FilterOrder::First;
+			FilterOrder filterOrder = FilterOrder::First;
 		};
 		struct Coefficients {
 			float a0 = 1.0f;
