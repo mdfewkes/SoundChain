@@ -59,7 +59,7 @@ public:
 	};
 
 	TrimSoundChain() {}
-	TrimSoundChain(Parameters &parameters) : _params(parameters ) {}
+	TrimSoundChain(Parameters &parameters) : _params(parameters) {}
 
 	Parameters GetParameters() {return _params.load();}
 	void SetParameters(Parameters &parameters) {
@@ -134,22 +134,24 @@ public:
 	};
 
 	WhiteNoiseSoundChain() {}
-	WhiteNoiseSoundChain(Parameters &parameters) : _params(parameters ) {}
+	WhiteNoiseSoundChain(Parameters &parameters) : _params(parameters) {}
 
-	Parameters GetParameters() {return _params;}
+	Parameters GetParameters() {return _params.load();}
 	void SetParameters(Parameters &parameters) {
-		_params = parameters;
+		_params.store(parameters);
 	}
 
 private:
-	Parameters _params;
+	std::atomic<Parameters> _params;
 
 	void Process(float* buffPtr, int numberOfFrames) {
+		Parameters params = _params.load();
+
 		int numberOfChannels = ReadSettings().Channels;
 		int numberOfSamples = numberOfFrames * numberOfChannels;
 		for (int sample = 0; sample < numberOfSamples;  sample += numberOfChannels) {
 			for (int channel = 0; channel < numberOfChannels; channel++) {
-				buffPtr[sample + channel] += _params.amplitude * ((rand() + 0.0f)/RAND_MAX * 2 - 1);
+				buffPtr[sample + channel] += params.amplitude * ((rand() + 0.0f)/RAND_MAX * 2 - 1);
 			}
 		}
 	}
