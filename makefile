@@ -1,13 +1,14 @@
-EXEC = D32
+EXEC = SoundChain.exe
 
 # CLIB = -I./lib/portaudio/include ./lib/portaudio/lib/.libs/libportaudio.a -lrt -lasound -ljack -pthread 
 # CLIB =  ./lib/miniaudio/miniaudio.c -I./lib/miniaudio
-CLIB = -framework AudioToolbox
+# CLIB = -framework AudioToolbox
+CLIB = -lole32
 
 MAIN = main.cpp
 
 $(EXEC): $(MAIN)
-	g++ -std=c++11 -o $@ $^ $(CLIB)
+	g++ -std=c++20 -o $@ $^ $(CLIB)
 
 clean:
 	rm -f $(EXEC)

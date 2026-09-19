@@ -11,6 +11,8 @@ class RingBuffer {
 public:
 	static_assert(S > 0, "Size must be positive");
 
+	RingBuffer() : buffer(S + 1) {}
+
 	bool Push(const T& item) {
 		int headIndex = head.load(std::memory_order_relaxed);
 		int next = NextIndex(headIndex);
@@ -44,7 +46,7 @@ private:
 		return (i + 1) % S;
 	}
 
-	std::array<T, S+1> buffer;
+	std::vector<T> buffer;
 	std::atomic<int> head{0};
 	std::atomic<int> tail{0};
 };
@@ -112,7 +114,7 @@ public:
 		audioFile.close();
 	}
 
-	static void WriteThread(std::ofstream &audioFile, RingBuffer<float, 524288> &ringBuffer, std::atomic<bool> &isRecording, std::atomic<size_t> &dataReady, int bitDepth) {
+	static void WriteThread(std::ofstream &audioFile, RingBuffer<float, 65536> &ringBuffer, std::atomic<bool> &isRecording, std::atomic<size_t> &dataReady, int bitDepth) {
 		int lastSeenDataFlag = dataReady.load();
 		float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 		while (isRecording.load()) {
@@ -140,7 +142,7 @@ private:
 	std::atomic<size_t> _dataReady{0};
 	std::ofstream audioFile;
 	std::thread _writerThread;
-	RingBuffer<float, 524288> _ringBuffer;
+	RingBuffer<float, 65536> _ringBuffer;
 	int bitDepth = 16;
 	float bitDepthScale = pow(2, bitDepth) / 2 - 1;
 	int preAudioPosition;
@@ -233,6 +235,7 @@ public:
 
 	void CloseFile() {
 		if (data != nullptr) delete[] data;
+		data == nullptr;
 	}
 
 private:

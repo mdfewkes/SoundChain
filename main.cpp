@@ -2,7 +2,7 @@
 #include "TBLSoundChain.hpp"
 #include "SoundChainWaveFile.hpp"
 #include "DAESoundChain.hpp"
-#include "CoreAudioSCP.hpp"
+#include "WasapiSCP.hpp"
 
 #define SAMPLERATE 48000
 #define CHANNELCOUNT 2
@@ -49,7 +49,7 @@ int main (int argc, char** argv) {
 	soundChainSettings.SampleRate = SAMPLERATE;
 	soundChainSettings.Channels = CHANNELCOUNT;
 
-	CoreAudioSCP platform;
+	WasapiSCP platform;
 	platform.SetPrevious(&wavout);
 	platform.Initialize(soundChainSettings);
 
@@ -88,5 +88,3 @@ int main (int argc, char** argv) {
 	wavout.StopRecording();
 	platform.Terminate();
 }
-
-// g++ -I./lib/miniaudio main.cpp ./lib/miniaudio/miniaudio.c -o SCWin
