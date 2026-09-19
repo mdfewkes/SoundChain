@@ -3,6 +3,7 @@
 #include "SoundChainPlatform.hpp"
 
 #include <cstdlib>
+#include <cstdio>
 #include <windows.h>
 #include <audioclient.h>
 #include <mmdeviceapi.h>
@@ -26,10 +27,11 @@ private:
 	std::atomic<bool> _running{false};
 
 	static DWORD WINAPI RenderThreadEntry(void* context) {
-		return static_cast<WasapiSCP*>(context)->RenderThread();
+		auto* self = static_cast<WasapiSCP*>(context);
+		return self->RenderThread();
 	}
 
-	DWORD WasapiSCP::RenderThread() {
+	DWORD RenderThread() {
 		while (_running.load()) {
 			DWORD result = WaitForSingleObject(_audioEvent, INFINITE);
 			if (result != WAIT_OBJECT_0) break;
