@@ -235,7 +235,7 @@ public:
 
 	void CloseFile() {
 		if (data != nullptr) delete[] data;
-		data == nullptr;
+		data = nullptr;
 	}
 
 private:
