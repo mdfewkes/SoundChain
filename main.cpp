@@ -2,7 +2,7 @@
 #include "TBLSoundChain.hpp"
 #include "SoundChainWaveFile.hpp"
 #include "DAESoundChain.hpp"
-#include "WasapiSCP.hpp"
+#include "CoreAudioSCP.hpp"
 
 #define SAMPLERATE 48000
 #define CHANNELCOUNT 2
@@ -49,7 +49,7 @@ int main (int argc, char** argv) {
 	soundChainSettings.SampleRate = SAMPLERATE;
 	soundChainSettings.Channels = CHANNELCOUNT;
 
-	WasapiSCP platform;
+	CoreAudioSCP platform;
 	platform.SetPrevious(&wavout);
 	platform.Initialize(soundChainSettings);
 

@@ -1,9 +1,10 @@
-EXEC = SoundChain.exe
+# EXEC = SoundChain.exe
+EXEC = SoundChain
 
 # CLIB = -I./lib/portaudio/include ./lib/portaudio/lib/.libs/libportaudio.a -lrt -lasound -ljack -pthread 
 # CLIB =  ./lib/miniaudio/miniaudio.c -I./lib/miniaudio
-# CLIB = -framework AudioToolbox
-CLIB = -lole32
+CLIB = -framework AudioToolbox
+# CLIB = -lole32
 
 MAIN = main.cpp
 
