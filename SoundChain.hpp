@@ -181,14 +181,14 @@ public:
 		if (_y_z2) { delete[] _y_z2; }
 	}
 
-	Parameters GetParameters() {return _params;}
+	Parameters GetParameters() {return _params.load();}
 	void SetParameters(Parameters &parameters) {
-		_params = parameters;
+		_params.store(parameters);
 		CalculateCoefficients();
 	}
 
 private:
-	Parameters _params;
+	std::atomic<Parameters> _params;
 	float _a0 = 1.0f;
 	float _a1 = 0.0f;
 	float _a2 = 0.0f;
@@ -250,7 +250,9 @@ private:
 	}
 
 	void CalculateCoefficients() {
-		switch (_params.filterType) {
+		Parameters params = _params.load();
+
+		switch (params.filterType) {
 			case FilterType::LowPass:
 				LowPassCoefficients();
 				break;
@@ -270,10 +272,12 @@ private:
 	}
 
 	void LowPassCoefficients() {
-		float w0 = 2.0f * M_PI * _params.frequency / _fs;
+		Parameters params = _params.load();
+
+		float w0 = 2.0f * M_PI * params.frequency / _fs;
 		float cosw0 = cos(w0);
 		float sinw0 = sin(w0);
-		float alpha = sinw0/(2.0f*_params.q);
+		float alpha = sinw0/(2.0f*params.q);
 
 		_b0 = (1.0f - cosw0) / 2.0f;
 		_b1 = 1.0f - cosw0;
@@ -284,10 +288,12 @@ private:
 	}
 
 	void HighPassCoefficients() {
-		float w0 = 2.0f * M_PI * _params.frequency / _fs;
+		Parameters params = _params.load();
+
+		float w0 = 2.0f * M_PI * params.frequency / _fs;
 		float cosw0 = cos(w0);
 		float sinw0 = sin(w0);
-		float alpha = sinw0/(2.0f*_params.q);
+		float alpha = sinw0/(2.0f*params.q);
 
 		_b0 = (1.0f + cosw0) / 2.0f;
 		_b1 = -(1.0f + cosw0);
@@ -298,10 +304,13 @@ private:
 	}
 
 	void BandPassCoefficients() {
-		float w0 = 2.0f * M_PI * _params.frequency / _fs;
+
+		Parameters params = _params.load();
+
+		float w0 = 2.0f * M_PI * params.frequency / _fs;
 		float cosw0 = cos(w0);
 		float sinw0 = sin(w0);
-		float alpha = sinw0/(2.0f*_params.q);
+		float alpha = sinw0/(2.0f*params.q);
 
 		_b0 = alpha;
 		_b1 = 0;
@@ -312,10 +321,12 @@ private:
 	}
 
 	void NotchCoefficients() {
-		float w0 = 2.0f * M_PI * _params.frequency / _fs;
+		Parameters params = _params.load();
+
+		float w0 = 2.0f * M_PI * params.frequency / _fs;
 		float cosw0 = cos(w0);
 		float sinw0 = sin(w0);
-		float alpha = sinw0/(2.0f*_params.q);
+		float alpha = sinw0/(2.0f*params.q);
 
 		_b0 = 1;
 		_b1 = -2.0f * cosw0;
@@ -326,10 +337,12 @@ private:
 	}
 
 	void AllPassCoefficients() {
-		float w0 = 2.0f * M_PI * _params.frequency / _fs;
+		Parameters params = _params.load();
+
+		float w0 = 2.0f * M_PI * params.frequency / _fs;
 		float cosw0 = cos(w0);
 		float sinw0 = sin(w0);
-		float alpha = sinw0/(2.0f*_params.q);
+		float alpha = sinw0/(2.0f*params.q);
 
 		_b0 = 1 - alpha;
 		_b1 = -2.0f * cosw0;
