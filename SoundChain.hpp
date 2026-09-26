@@ -355,16 +355,16 @@ public:
 
 	Parameters GetParameters() {return _params;}
 	void SetParameters(Parameters &parameters) {
-		_params = parameters;
+		_params.store(parameters);
 
-		_readIndex = _writeIndex - (_params.delayTime / BUFFER_DURATION * (float)_bufferSize);
+		_readIndex = _writeIndex - (parameters.delayTime / BUFFER_DURATION * (float)_bufferSize);
 		_readIndex = _readIndex % _bufferSize;
 		_readIndex -= _readIndex % ReadSettings().Channels;
 	}
 
 private:
 	const float BUFFER_DURATION = 2.0f;
-	Parameters _params;
+	std::atomic<Parameters> _params;
 	float* _buffer = nullptr;
 	int _bufferSize = 0;
 	int _readIndex = 0;
@@ -379,14 +379,17 @@ private:
 			_buffer[i] = 0.0f;
 		}
 
+		Parameters params = _params.load();
+
 		_writeIndex = 0;
-		_readIndex = _writeIndex - (_params.delayTime / BUFFER_DURATION * _bufferSize);
+		_readIndex = _writeIndex - (params.delayTime / BUFFER_DURATION * _bufferSize);
 		_readIndex = _readIndex % _bufferSize;
 		_readIndex -= _readIndex % ReadSettings().Channels;
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
 		if (_buffer == nullptr) return;
+		Parameters params = _params.load();
 
 		int numberOfChannels = ReadSettings().Channels;
 		int numberOfSamples = numberOfFrames * numberOfChannels;
@@ -394,7 +397,7 @@ private:
 
 			float value = _buffer[_readIndex];
 
-			_buffer[_writeIndex] = buffPtr[sample] + _params.feedback * value;
+			_buffer[_writeIndex] = buffPtr[sample] + params.feedback * value;
 
 			buffPtr[sample] += value;
 
