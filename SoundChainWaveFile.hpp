@@ -185,23 +185,33 @@ private:
 	}
 };
 
+struct AudioData {
+	float* data = nullptr;
+	int dataSize = 0;
+	int channels = 1;
+	int sampleRate = 44100;
+	int bitDepth = 16;
+
+	AudioData() {};
+	~AudioData() {
+		if (data != nullptr) delete[] data;
+		data = nullptr;
+	};
+};
+
 // TODO:
 // Sequel with threaded open?
 class WavReaderSoundChain : public SoundChainBase {
 public:
-	WavReaderSoundChain() {
-		// OpenFile();
-	}
-	~WavReaderSoundChain() {
-		CloseFile();
-	}
+	WavReaderSoundChain() {}
+	~WavReaderSoundChain() {}
 
 	void OpenFile(std::string path = "input.wav") {
-		if (data != nullptr) return;
+		if (audioData.data != nullptr) return;
 
 		audioFile.open(path, std::ios::binary);
 
-		while (!audioFile.eof() && data == nullptr) {
+		while (!audioFile.eof() && audioData.data == nullptr) {
 			std::string chunckID = ReadChunckID();
 
 			if (chunckID == "RIFF") {
@@ -213,11 +223,11 @@ public:
 				int dummy;
 				audioFile.read(reinterpret_cast<char*>(&chunckSize), 4); // subchunck size
 				audioFile.read(reinterpret_cast<char*>(&dummy), 2); // audio format
-				audioFile.read(reinterpret_cast<char*>(&channels), 2); // num channels
-				audioFile.read(reinterpret_cast<char*>(&sampleRate), 4); // sample rate
+				audioFile.read(reinterpret_cast<char*>(&audioData.channels), 2); // num channels
+				audioFile.read(reinterpret_cast<char*>(&audioData.sampleRate), 4); // sample rate
 				audioFile.read(reinterpret_cast<char*>(&dummy), 4); // byte rate
 				audioFile.read(reinterpret_cast<char*>(&dummy), 2); // block align
-				audioFile.read(reinterpret_cast<char*>(&bitDepth), 2); // bits per sample
+				audioFile.read(reinterpret_cast<char*>(&audioData.bitDepth), 2); // bits per sample
 			} else if (chunckID == "data") {
 				int chunckSize;
 				audioFile.read(reinterpret_cast<char*>(&chunckSize), 4);
@@ -234,37 +244,34 @@ public:
 	}
 
 	void CloseFile() {
-		if (data != nullptr) delete[] data;
-		data = nullptr;
+		if (audioData.data != nullptr) delete[] audioData.data;
+		audioData.data = nullptr;
+		audioData.dataSize = 0;
 	}
 
 private:
 	std::ifstream audioFile;
-	float* data = nullptr;
-	int dataSize = 0;
+	AudioData audioData;
 	int currentDataIndex = 0.0;
-	int channels = 1;
-	int sampleRate = 44100;
-	int bitDepth = 16;
 
 	void Reset() override {
 		currentDataIndex = 0;
 	}
 
 	void Process(float* buffPtr, int numberOfFrames) override {
-		if (data == nullptr) return;
+		if (audioData.data == nullptr) return;
 
 		int numberOfChannels = ReadSettings().Channels;
 		int numberOfSamples = numberOfFrames * numberOfChannels;
-		int playbackChannels = std::min(channels, numberOfChannels);
+		int playbackChannels = std::min(audioData.channels, numberOfChannels);
 
 		for (int sample = 0; sample < numberOfSamples; sample += numberOfChannels) {
 			for (int channel = 0; channel < playbackChannels; channel++) {
-				if (currentDataIndex+channel >= dataSize) return;
+				if (currentDataIndex+channel >= audioData.dataSize) return;
 
-				buffPtr[sample+channel] += data[currentDataIndex+channel];
+				buffPtr[sample+channel] += audioData.data[currentDataIndex+channel];
 			}
-			currentDataIndex += channels;
+			currentDataIndex += audioData.channels;
 		}
 	}
 
@@ -280,39 +287,39 @@ private:
 	}
 
 	void ReadData(int size) {
-		dataSize = size / (bitDepth/8);
-		if (data != nullptr) delete[] data;
-		data = new float[dataSize];
+		audioData.dataSize = size / (audioData.bitDepth/8);
+		if (audioData.data != nullptr) delete[] audioData.data;
+		audioData.data = new float[audioData.dataSize];
 
-		switch(bitDepth) {
+		switch(audioData.bitDepth) {
 		case 16: {
 			signed short int value = 0;
-			for (int i = 0; i < dataSize; i++) {
+			for (int i = 0; i < audioData.dataSize; i++) {
 				// printf("%d / %d\n", i+1, dataSize);
 				audioFile.read(reinterpret_cast<char*>(&value), 2);
 
-				data[i] = (float)value / 32767.0f;
+				audioData.data[i] = (float)value / 32767.0f;
 			}
 			break;
 		}
 		case 24: {
 			signed long int value = 0;
 			unsigned char b[3];
-			for (int i = 0; i < dataSize; i++) {
+			for (int i = 0; i < audioData.dataSize; i++) {
 				audioFile.read((char*)b, 3);
 				value = 
 					(b[2] << 24) |
 					(b[1] << 16) |
 					(b[0] <<  8);
 
-				data[i] = (float)value / 2147483647.0f;
+				audioData.data[i] = (float)value / 2147483647.0f;
 			}
 			break;
 		}
 		case 32: {
 			signed long int value = 0;
 			unsigned char b[4];
-			for (int i = 0; i < dataSize; i++) {
+			for (int i = 0; i < audioData.dataSize; i++) {
 				audioFile.read((char*)b, 4);
 				value = 
 					(b[3] << 24) |
@@ -320,13 +327,13 @@ private:
 					(b[1] <<  8) |
 					(b[0] <<  0);
 
-				data[i] = (float)value / 2147483647.0f;
+				audioData.data[i] = (float)value / 2147483647.0f;
 			}
 			break;
 		}
 		default: {
-			for (int i = 0; i < dataSize; i++) {
-				data[i] = 0.0f;
+			for (int i = 0; i < audioData.dataSize; i++) {
+				audioData.data[i] = 0.0f;
 			}
 		}
 		}

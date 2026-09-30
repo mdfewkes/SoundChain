@@ -261,7 +261,7 @@ namespace TBL {
 
 		static const int NUMBER_OF_OP = 6;
 
-		RingBuffer<FMEvent, 2> eventBuffer = {};
+		RingBuffer<FMEvent, 16> eventBuffer = {};
 
 		std::array<float, NUMBER_OF_OP> _oscPhase = {};
 		std::array<float, NUMBER_OF_OP> _oscInc = {};
