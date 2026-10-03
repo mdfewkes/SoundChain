@@ -199,8 +199,6 @@ struct AudioData {
 	};
 };
 
-// TODO:
-// Sequel with threaded open?
 class WavReaderSoundChain : public SoundChainBase {
 public:
 	WavReaderSoundChain() {}
