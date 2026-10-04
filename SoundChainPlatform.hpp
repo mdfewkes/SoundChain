@@ -11,7 +11,6 @@ struct SoundChainPlatformSettings {
 
 class SoundChainPlatform {
 protected:
-
 	virtual void Setup() {};
 	virtual void Start() {};
 	virtual void End() {};
