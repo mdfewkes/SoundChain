@@ -4,6 +4,7 @@
 #include <alsa/asoundlib.h>
 #include <thread>
 #include <atomic>
+#include <unistd.h>
 #include "SoundChainPlatform.hpp"
 
 class AlsaSCP : public SoundChainPlatform {
@@ -51,7 +52,7 @@ private:
 		snd_pcm_hw_params_t *params;
 		int err;
 
-		if ((err = snd_pcm_open(&pcm_handle, PCM_DEVICE, SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
+		if ((err = snd_pcm_open(&pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0) {
 			fprintf(stderr, "Unable to open PCM device: %s\n", snd_strerror(err));
 			return;
 		}
