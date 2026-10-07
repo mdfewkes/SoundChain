@@ -4,7 +4,6 @@
 #include <alsa/asoundlib.h>
 #include <thread>
 #include <atomic>
-#include <sys/_pthread/_pthread_t.h>
 #include "SoundChainPlatform.hpp"
 
 class AlsaSCP : public SoundChainPlatform {
@@ -14,7 +13,7 @@ public:
 		if (buffer) delete[] buffer;
 	}
 
-	static void AudioThread(AlsaSCP* alsaSCP) {
+	void AudioThread(AlsaSCP* alsaSCP) {
 		if (!buffer) return;
 
 		while (running.load()) {
@@ -91,7 +90,7 @@ private:
 		if (running.load()) return;
 
 		running.store(true);
-		audio_thread = std::thread(AudioThread, this);
+		audio_thread = std::thread(&AlsaSCP::AudioThread, this);
 	}
 
 	void End() override {

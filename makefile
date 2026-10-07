@@ -5,6 +5,7 @@ EXEC = SoundChain
 # CLIB =  ./lib/miniaudio/miniaudio.c -I./lib/miniaudio
 CLIB = -framework AudioToolbox
 # CLIB = -lole32
+# CLIB = -pthread -lasound
 
 MAIN = main.cpp
 
